@@ -2,23 +2,17 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "./ProposalNegotiation.css";
 
-// ─── MOCK DATA ────────────────────────────────────────────────
-const PROJECTS = {
-  1: { id: 1, title: "E-Commerce Fashion Landing Page", sub: "Web Development", category: "Technology", budget: "$200", deadline: "Apr 15, 2025", client: "Andi Wijaya", clientAvatar: "AW" },
-  2: { id: 2, title: "ML Product Recommendation System", sub: "Machine Learning", category: "Technology", budget: "$800", deadline: "Apr 30, 2025", client: "Startup Teknologi", clientAvatar: "ST" },
-  3: { id: 3, title: "Admin Dashboard UI Redesign", sub: "UI/UX Design", category: "Design & Creative", budget: "$330", deadline: "Apr 20, 2025", client: "Budi Santoso", clientAvatar: "BS" },
-};
-
 const categoryColors = {
-  "Technology": { bg: "#e0f2fe", color: "#0369a1" },
-  "Design & Creative": { bg: "#fdf4ff", color: "#7e22ce" },
-  "Marketing": { bg: "#f0fdf4", color: "#15803d" },
+  "Technology":            { bg: "#e0f2fe", color: "#0369a1" },
+  "Design & Creative":     { bg: "#fdf4ff", color: "#7e22ce" },
+  "Marketing":             { bg: "#f0fdf4", color: "#15803d" },
   "Business & Consulting": { bg: "#fff7ed", color: "#c2410c" },
 };
 
 // ─── NAVBAR ───────────────────────────────────────────────────
 const Navbar = () => {
   const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("user"));
   return (
     <nav className="pnav">
       <div className="pnav-inner">
@@ -32,8 +26,14 @@ const Navbar = () => {
           <span onClick={() => navigate("/")}>Pricing</span>
         </div>
         <div className="pnav-actions">
-          <button className="btn-pnav-login" onClick={() => navigate("/login")}>Log In</button>
-          <button className="btn-pnav-signup" onClick={() => navigate("/signup")}>Sign Up Free</button>
+          {user ? (
+            <button className="btn-pnav-login" onClick={() => navigate("/dashboard")}>Dashboard</button>
+          ) : (
+            <>
+              <button className="btn-pnav-login" onClick={() => navigate("/login")}>Log In</button>
+              <button className="btn-pnav-signup" onClick={() => navigate("/signup")}>Sign Up Free</button>
+            </>
+          )}
         </div>
       </div>
     </nav>
@@ -140,16 +140,20 @@ const FinalizedBanner = ({ deal, onViewContract }) => (
 // ─── SIDEBAR ──────────────────────────────────────────────────
 const ProposalSidebar = ({ project, currentTerms, status, onAccept, onReject, isFinalized, deal }) => {
   const catColor = categoryColors[project.category] || { bg: "#f1f5f9", color: "#475569" };
+  const clientInitials = project.client_name
+    ? project.client_name.split(" ").map(n => n[0]).join("").toUpperCase()
+    : "C";
+
   return (
     <div className="neg-sidebar">
       <div className="neg-sidebar-card">
         <div className="neg-sidebar-section-title">Project</div>
         <div className="neg-project-info">
-          <span className="neg-project-badge" style={{ background: catColor.bg, color: catColor.color }}>{project.sub}</span>
+          <span className="neg-project-badge" style={{ background: catColor.bg, color: catColor.color }}>{project.sub_category}</span>
           <p className="neg-project-name">{project.title}</p>
           <div className="neg-project-meta-row">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            {project.client}
+            {project.client_name}
           </div>
         </div>
       </div>
@@ -262,9 +266,7 @@ const CounterForm = ({ initialBid, initialDays, onSubmit, onCancel, isLoading })
   );
 };
 
-// ─── GROQ API HELPERS ─────────────────────────────────────────
-
-// AI Draft Reply untuk freelancer
+// ─── GROQ AI HELPERS ──────────────────────────────────────────
 async function generateAIReply(context) {
   const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
   const counterBid = context.latestCounter?.counterBid || context.latestCounter?.bid;
@@ -273,27 +275,14 @@ async function generateAIReply(context) {
 
   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer " + GROQ_API_KEY,
-    },
+    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + GROQ_API_KEY },
     body: JSON.stringify({
       model: "llama-3.1-8b-instant",
       max_tokens: 400,
       temperature: 0.7,
       messages: [
-        {
-          role: "system",
-          content: "You are helping a freelancer negotiate professionally. Write concise, friendly replies. No markdown headers.",
-        },
-        {
-          role: "user",
-          content: "Project: " + context.projectTitle +
-            "\nClient counter: $" + counterBid + " / " + counterTimeline + " days" +
-            "\nClient message: " + counterMsg +
-            "\nMy original bid: $" + context.myBid + " / " + context.myDays + " days" +
-            "\n\nWrite a professional 3-4 paragraph reply: acknowledge feedback, propose middle-ground, end collaboratively.",
-        },
+        { role: "system", content: "You are helping a freelancer negotiate professionally. Write concise, friendly replies. No markdown headers." },
+        { role: "user", content: "Project: " + context.projectTitle + "\nClient counter: $" + counterBid + " / " + counterTimeline + " days\nClient message: " + counterMsg + "\nMy original bid: $" + context.myBid + " / " + context.myDays + " days\n\nWrite a professional 3-4 paragraph reply: acknowledge feedback, propose middle-ground, end collaboratively." },
       ],
     }),
   });
@@ -302,26 +291,19 @@ async function generateAIReply(context) {
   return { text: data.choices?.[0]?.message?.content || "" };
 }
 
-// AI Client Auto-Reply — simulasi respon dari client
 async function generateClientReply(context) {
   const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
-
-  // Buat history percakapan sebagai string — label jelas siapa yang ngomong
   const historyText = context.messages
     .filter(m => m.type !== "system")
     .map(m => {
       const who = m.sender === "freelancer" ? context.freelancerName + " (Freelancer)" : context.clientName + " (Client)";
       const terms = (m.bid || m.counterBid) ? " [Bid: $" + (m.bid || m.counterBid) + ", " + (m.timeline || m.counterTimeline) + " days]" : "";
       return who + ": " + m.text + terms;
-    })
-    .join("\n\n");
+    }).join("\n\n");
 
   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer " + GROQ_API_KEY,
-    },
+    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + GROQ_API_KEY },
     body: JSON.stringify({
       model: "llama-3.1-8b-instant",
       max_tokens: 350,
@@ -329,83 +311,53 @@ async function generateClientReply(context) {
       messages: [
         {
           role: "system",
-          content: `You are ${context.clientName}, a client negotiating with a freelancer for a project called "${context.projectTitle}".
-Your budget is ${context.budget}. Be realistic and human — sometimes push back, sometimes agree if the offer is fair.
-
-IMPORTANT — respond in ONE of these formats depending on the situation:
-1. If you want to COUNTER with new numbers, start your reply with "COUNTER:[bid]:[days]:" then your message. Example: "COUNTER:250:12:Thanks for the revision..."
-2. If you want to ACCEPT the current terms, start with "ACCEPT:" then your message. Example: "ACCEPT:Sounds great, let's do it!"
-3. If you just want to chat/ask questions, just write normally without any prefix.
-
-Rules:
-- Accept if freelancer's bid is within 15% of your budget AND timeline is reasonable
-- Counter if the numbers are close but not quite right
-- Ask questions if you need more info
-- Keep it short (2-3 sentences), conversational, no markdown`,
+          content: `You are ${context.clientName}, a client negotiating with a freelancer for a project called "${context.projectTitle}". Your budget is ${context.budget}. Be realistic and human.\n\nRespond in ONE of these formats:\n1. COUNTER:[bid]:[days]:message\n2. ACCEPT:message\n3. Just write normally\n\nAccept if bid is within 15% of budget AND timeline is reasonable. Keep it short (2-3 sentences).`,
         },
-        {
-          role: "user",
-          content: "You are " + context.clientName + " (the CLIENT). The freelancer " + context.freelancerName + " sent you a proposal.\n\nConversation so far:\n\n" + historyText + "\n\nNow write YOUR reply as " + context.clientName + " (the client, NOT the freelancer):",
-        },
+        { role: "user", content: "You are " + context.clientName + " (the CLIENT). Conversation:\n\n" + historyText + "\n\nNow write YOUR reply as " + context.clientName + ":" },
       ],
     }),
   });
-
   if (!response.ok) throw new Error("Groq API error");
   const data = await response.json();
   const raw = data.choices?.[0]?.message?.content || "";
 
-  // Parse response dari AI
-  if (raw.startsWith("ACCEPT:")) {
-    return {
-      type: "accept",
-      text: raw.replace("ACCEPT:", "").trim(),
-    };
-  } else if (raw.startsWith("COUNTER:")) {
-    // Format: COUNTER:bid:days:message
+  if (raw.startsWith("ACCEPT:")) return { type: "accept", text: raw.replace("ACCEPT:", "").trim() };
+  if (raw.startsWith("COUNTER:")) {
     const parts = raw.split(":");
-    const counterBid = parseInt(parts[1]) || context.currentBid;
-    const counterDays = parseInt(parts[2]) || context.currentTimeline;
-    const text = parts.slice(3).join(":").trim();
-    return {
-      type: "counter",
-      text,
-      counterBid,
-      counterTimeline: counterDays,
-    };
-  } else {
-    return {
-      type: "message",
-      text: raw,
-    };
+    return { type: "counter", text: parts.slice(3).join(":").trim(), counterBid: parseInt(parts[1]) || context.currentBid, counterTimeline: parseInt(parts[2]) || context.currentTimeline };
   }
+  return { type: "message", text: raw };
 }
 
 // ─── MAIN COMPONENT ───────────────────────────────────────────
 export default function ProposalNegotiation() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const project = PROJECTS[parseInt(id)] || PROJECTS[1];
-  const catColor = categoryColors[project.category] || { bg: "#f1f5f9", color: "#475569" };
 
-  // ── Baca data proposal dari ProposalGenerator via sessionStorage ──
+  const [project, setProject] = useState(null);
+  const [loadingProject, setLoadingProject] = useState(true);
+  const [showContract, setShowContract] = useState(false);
+
+  const token = localStorage.getItem("token");
+
+  // Baca data dari sessionStorage (dikirim dari ProposalGenerator)
   const savedProposal = JSON.parse(sessionStorage.getItem("activeProposal") || "{}");
   const proposalText = savedProposal.proposalText || "Hi, I'd love to work on your project. Please see my proposal above.";
-  const freelancerBid = savedProposal.bid || parseInt(project.budget.replace(/[^0-9]/g, "")) || 200;
+  const freelancerBid = savedProposal.bid || 200;
   const freelancerTimeline = savedProposal.timeline || 14;
   const freelancerName = savedProposal.freelancerName || "You";
 
+  useEffect(() => {
+    if (!token) { navigate("/login"); return; }
+    fetch(`http://localhost:3001/api/projects/${id}`)
+      .then(res => res.json())
+      .then(data => setProject(data))
+      .catch(err => console.error(err))
+      .finally(() => setLoadingProject(false));
+  }, [id]);
+
   const [messages, setMessages] = useState([
-    {
-      id: 1,
-      sender: "freelancer",
-      type: "proposal",
-      text: proposalText,
-      bid: freelancerBid,
-      timeline: freelancerTimeline,
-      timestamp: "Just now",
-      status: "pending",
-    },
+    { id: 1, sender: "freelancer", type: "proposal", text: proposalText, bid: freelancerBid, timeline: freelancerTimeline, timestamp: "Just now", status: "pending" },
   ]);
 
   const [composerMode, setComposerMode] = useState("message");
@@ -415,15 +367,12 @@ export default function ProposalNegotiation() {
   const [isAISuggesting, setIsAISuggesting] = useState(false);
   const [isFinalized, setIsFinalized] = useState(false);
   const [deal, setDeal] = useState(null);
-  const [showContract, setShowContract] = useState(false);
-
   const chatBottomRef = useRef(null);
 
-  // Derived state
   const lastCounter = [...messages].reverse().find(m => m.counterBid || m.bid);
   const currentTerms = {
-    bid: lastCounter?.counterBid || lastCounter?.bid || parseInt(project.budget.replace(/[^0-9]/g, "")),
-    timeline: lastCounter?.counterTimeline || lastCounter?.timeline || 14,
+    bid: lastCounter?.counterBid || lastCounter?.bid || freelancerBid,
+    timeline: lastCounter?.counterTimeline || lastCounter?.timeline || freelancerTimeline,
   };
   const lastMsg = messages[messages.length - 1];
   const negotiationStatus = isFinalized ? "finalized" : lastMsg?.sender === "client" ? "awaiting_freelancer" : "pending";
@@ -432,118 +381,56 @@ export default function ProposalNegotiation() {
     chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  // ── Trigger client auto-reply setelah freelancer kirim pesan ──
   const triggerClientReply = async (updatedMessages) => {
+    if (!project) return;
     setIsTyping(true);
-
-    // Jeda 2-3 detik supaya terasa natural
     await new Promise(res => setTimeout(res, 2000 + Math.random() * 1000));
-
     try {
       const lastFreelancerMsg = [...updatedMessages].reverse().find(m => m.sender === "freelancer");
       const context = {
-        clientName: project.client,
-        freelancerName: freelancerName,
+        clientName: project.client_name,
+        freelancerName,
         projectTitle: project.title,
         budget: project.budget,
         messages: updatedMessages,
         currentBid: lastFreelancerMsg?.bid || currentTerms.bid,
         currentTimeline: lastFreelancerMsg?.timeline || currentTerms.timeline,
       };
-
       const reply = await generateClientReply(context);
-
       setIsTyping(false);
 
       if (reply.type === "accept") {
-        // Client accept — finalize deal otomatis
-        const acceptMsg = {
-          id: updatedMessages.length + 1,
-          sender: "client",
-          type: "message",
-          text: reply.text,
-          timestamp: "Just now",
-        };
-        const systemMsg = {
-          id: updatedMessages.length + 2,
-          sender: "system",
-          type: "system",
-          systemLabel: "Terms Accepted",
-          text: "Both parties have agreed on $" + currentTerms.bid + " with a " + currentTerms.timeline + "-day delivery. The project is now active!",
-          timestamp: "Just now",
-        };
+        const acceptMsg = { id: updatedMessages.length + 1, sender: "client", type: "message", text: reply.text, timestamp: "Just now" };
+        const systemMsg = { id: updatedMessages.length + 2, sender: "system", type: "system", systemLabel: "Terms Accepted", text: "Both parties have agreed on $" + currentTerms.bid + " with a " + currentTerms.timeline + "-day delivery. The project is now active!", timestamp: "Just now" };
         setMessages(prev => [...prev, acceptMsg, systemMsg]);
         setDeal({ bid: currentTerms.bid, timeline: currentTerms.timeline });
         setIsFinalized(true);
-
       } else if (reply.type === "counter") {
-        // Client counter dengan angka baru
-        const counterMsg = {
-          id: updatedMessages.length + 1,
-          sender: "client",
-          type: "counter",
-          text: reply.text || "I'd like to propose different terms.",
-          counterBid: reply.counterBid,
-          counterTimeline: reply.counterTimeline,
-          timestamp: "Just now",
-        };
+        const counterMsg = { id: updatedMessages.length + 1, sender: "client", type: "counter", text: reply.text || "I'd like to propose different terms.", counterBid: reply.counterBid, counterTimeline: reply.counterTimeline, timestamp: "Just now" };
         setMessages(prev => [...prev, counterMsg]);
-
       } else {
-        // Pesan biasa dari client
-        const clientMsg = {
-          id: updatedMessages.length + 1,
-          sender: "client",
-          type: "message",
-          text: reply.text,
-          timestamp: "Just now",
-        };
+        const clientMsg = { id: updatedMessages.length + 1, sender: "client", type: "message", text: reply.text, timestamp: "Just now" };
         setMessages(prev => [...prev, clientMsg]);
       }
-
     } catch (err) {
       setIsTyping(false);
-      // Fallback jika API gagal
-      const fallbackMsg = {
-        id: updatedMessages.length + 1,
-        sender: "client",
-        type: "message",
-        text: "Thanks for your message! Let me review the terms and get back to you shortly.",
-        timestamp: "Just now",
-      };
-      setMessages(prev => [...prev, fallbackMsg]);
+      setMessages(prev => [...prev, { id: prev.length + 1, sender: "client", type: "message", text: "Thanks for your message! Let me review the terms and get back to you shortly.", timestamp: "Just now" }]);
     }
   };
 
-  // ── Send plain message ──
   const handleSendMessage = () => {
     if (!composerText.trim()) return;
-    const newMsg = {
-      id: messages.length + 1,
-      sender: "freelancer",
-      type: "message",
-      text: composerText.trim(),
-      timestamp: "Just now",
-    };
+    const newMsg = { id: messages.length + 1, sender: "freelancer", type: "message", text: composerText.trim(), timestamp: "Just now" };
     const updatedMessages = [...messages, newMsg];
     setMessages(updatedMessages);
     setComposerText("");
     triggerClientReply(updatedMessages);
   };
 
-  // ── Send counter offer ──
   const handleSendCounter = ({ bid, timeline, note }) => {
     setIsSending(true);
     setTimeout(() => {
-      const newMsg = {
-        id: messages.length + 1,
-        sender: "freelancer",
-        type: "counter",
-        text: note || "I'd like to propose a revised offer: $" + bid + " over " + timeline + " days. I believe this reflects the full scope of work and ensures quality delivery.",
-        bid,
-        timeline,
-        timestamp: "Just now",
-      };
+      const newMsg = { id: messages.length + 1, sender: "freelancer", type: "counter", text: note || "I'd like to propose a revised offer: $" + bid + " over " + timeline + " days.", bid, timeline, timestamp: "Just now" };
       const updatedMessages = [...messages, newMsg];
       setMessages(updatedMessages);
       setComposerMode("message");
@@ -552,39 +439,23 @@ export default function ProposalNegotiation() {
     }, 600);
   };
 
-  // ── Accept counter offer (manual oleh freelancer) ──
   const handleAccept = () => {
     const acceptedDeal = { bid: currentTerms.bid, timeline: currentTerms.timeline };
-    const systemMsg = {
-      id: messages.length + 1,
-      sender: "system",
-      type: "system",
-      systemLabel: "Terms Accepted",
-      text: "Both parties have agreed on $" + acceptedDeal.bid + " with a " + acceptedDeal.timeline + "-day delivery. The project is now active!",
-      timestamp: "Just now",
-    };
+    const systemMsg = { id: messages.length + 1, sender: "system", type: "system", systemLabel: "Terms Accepted", text: "Both parties have agreed on $" + acceptedDeal.bid + " with a " + acceptedDeal.timeline + "-day delivery. The project is now active!", timestamp: "Just now" };
     setMessages(prev => [...prev, systemMsg]);
     setDeal(acceptedDeal);
     setIsFinalized(true);
   };
 
-  // ── Reject proposal ──
   const handleReject = () => {
-    const systemMsg = {
-      id: messages.length + 1,
-      sender: "system",
-      type: "system",
-      systemLabel: "Proposal Rejected",
-      text: "You have rejected this proposal. You can send a new counter offer or close the negotiation.",
-      timestamp: "Just now",
-    };
+    const systemMsg = { id: messages.length + 1, sender: "system", type: "system", systemLabel: "Proposal Rejected", text: "You have rejected this proposal. You can send a new counter offer or close the negotiation.", timestamp: "Just now" };
     setMessages(prev => [...prev, systemMsg]);
   };
 
-  // ── AI Draft Reply untuk freelancer ──
   const handleAISuggest = async () => {
     setIsAISuggesting(true);
     try {
+      const lastCounter = [...messages].reverse().find(m => m.counterBid || m.bid);
       const context = {
         projectTitle: project.title,
         latestCounter: lastCounter,
@@ -600,71 +471,9 @@ export default function ProposalNegotiation() {
     }
   };
 
-  // ── Download PDF ──
   const handleDownloadPDF = () => {
     const finalizedDate = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-
-    // Buat konten HTML untuk PDF
-    const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Contract - ${project.title}</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1e293b; background: white; padding: 48px; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; padding-bottom: 24px; border-bottom: 2px solid #e2e8f0; }
-    .logo { font-size: 22px; font-weight: 800; color: #1e293b; }
-    .logo span { color: #6366f1; }
-    .tag { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #94a3b8; text-transform: uppercase; }
-    .contract-title { font-size: 28px; font-weight: 800; color: #0f172a; margin: 12px 0 28px; }
-    .parties { display: flex; gap: 0; margin-bottom: 32px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
-    .party { flex: 1; padding: 20px 24px; background: #f8fafc; }
-    .party:first-child { border-right: 1px solid #e2e8f0; }
-    .party-label { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px; }
-    .party-name { font-size: 17px; font-weight: 700; color: #0f172a; }
-    .divider { height: 1px; background: #e2e8f0; margin: 28px 0; }
-    .terms-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #f1f5f9; }
-    .terms-row:last-child { border-bottom: none; }
-    .terms-label { font-size: 14px; color: #64748b; }
-    .terms-val { font-size: 15px; font-weight: 700; color: #0f172a; }
-    .terms-val.green { color: #16a34a; }
-    .note { font-size: 13px; color: #94a3b8; text-align: center; line-height: 1.6; margin-top: 28px; }
-    .status-active { display: inline-block; background: #dcfce7; color: #16a34a; padding: 3px 10px; border-radius: 20px; font-size: 13px; font-weight: 700; }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <div class="logo">Proposal<span>in</span></div>
-    <div class="tag">Freelance Contract</div>
-  </div>
-  <div class="tag">FREELANCE CONTRACT</div>
-  <h1 class="contract-title">${project.title}</h1>
-  <div class="parties">
-    <div class="party">
-      <div class="party-label">Client</div>
-      <div class="party-name">${project.client}</div>
-    </div>
-    <div class="party">
-      <div class="party-label">Freelancer</div>
-      <div class="party-name">${freelancerName}</div>
-    </div>
-  </div>
-  <div class="divider"></div>
-  <div class="terms-row"><span class="terms-label">Project</span><span class="terms-val">${project.title}</span></div>
-  <div class="terms-row"><span class="terms-label">Category</span><span class="terms-val">${project.sub}</span></div>
-  <div class="terms-row"><span class="terms-label">Agreed Bid</span><span class="terms-val green">$${deal?.bid}</span></div>
-  <div class="terms-row"><span class="terms-label">Delivery</span><span class="terms-val">${deal?.timeline} days from start</span></div>
-  <div class="terms-row"><span class="terms-label">Payment</span><span class="terms-val">Upon milestone approval</span></div>
-  <div class="terms-row"><span class="terms-label">Revisions</span><span class="terms-val">Up to 3 rounds</span></div>
-  <div class="terms-row"><span class="terms-label">Status</span><span class="terms-val"><span class="status-active">Active ✓</span></span></div>
-  <div class="divider"></div>
-  <p class="note">This contract was finalized on ${finalizedDate} via Proposalin.<br>Both parties agree to the terms outlined above.</p>
-</body>
-</html>`;
-
-    // Buka di tab baru dan trigger print/save as PDF
+    const htmlContent = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Contract - ${project?.title}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Helvetica Neue',Arial,sans-serif;color:#1e293b;padding:48px}.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:40px;padding-bottom:24px;border-bottom:2px solid #e2e8f0}.logo{font-size:22px;font-weight:800}.logo span{color:#6366f1}.tag{font-size:11px;font-weight:700;letter-spacing:2px;color:#94a3b8;text-transform:uppercase}.contract-title{font-size:28px;font-weight:800;margin:12px 0 28px}.parties{display:flex;margin-bottom:32px;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden}.party{flex:1;padding:20px 24px;background:#f8fafc}.party:first-child{border-right:1px solid #e2e8f0}.party-label{font-size:10px;font-weight:700;letter-spacing:1.5px;color:#94a3b8;text-transform:uppercase;margin-bottom:6px}.party-name{font-size:17px;font-weight:700}.divider{height:1px;background:#e2e8f0;margin:28px 0}.terms-row{display:flex;justify-content:space-between;padding:14px 0;border-bottom:1px solid #f1f5f9}.terms-label{font-size:14px;color:#64748b}.terms-val{font-size:15px;font-weight:700}.green{color:#16a34a}.note{font-size:13px;color:#94a3b8;text-align:center;margin-top:28px}</style></head><body><div class="header"><div class="logo">Proposal<span>in</span></div><div class="tag">Freelance Contract</div></div><div class="tag">FREELANCE CONTRACT</div><h1 class="contract-title">${project?.title}</h1><div class="parties"><div class="party"><div class="party-label">Client</div><div class="party-name">${project?.client_name}</div></div><div class="party"><div class="party-label">Freelancer</div><div class="party-name">${freelancerName}</div></div></div><div class="divider"></div><div class="terms-row"><span class="terms-label">Project</span><span class="terms-val">${project?.title}</span></div><div class="terms-row"><span class="terms-label">Category</span><span class="terms-val">${project?.sub_category}</span></div><div class="terms-row"><span class="terms-label">Agreed Bid</span><span class="terms-val green">$${deal?.bid}</span></div><div class="terms-row"><span class="terms-label">Delivery</span><span class="terms-val">${deal?.timeline} days from start</span></div><div class="terms-row"><span class="terms-label">Revisions</span><span class="terms-val">Up to 3 rounds</span></div><div class="divider"></div><p class="note">This contract was finalized on ${finalizedDate} via Proposalin.</p></body></html>`;
     const win = window.open("", "_blank");
     win.document.write(htmlContent);
     win.document.close();
@@ -672,7 +481,17 @@ export default function ProposalNegotiation() {
     setTimeout(() => win.print(), 500);
   };
 
-  // ── Contract Modal ──
+  if (loadingProject || !project) return (
+    <div className="pg-page"><Navbar />
+      <p style={{ textAlign: "center", padding: "4rem", color: "#888" }}>Loading...</p>
+    </div>
+  );
+
+  const catColor = categoryColors[project.category] || { bg: "#f1f5f9", color: "#475569" };
+  const clientInitials = project.client_name
+    ? project.client_name.split(" ").map(n => n[0]).join("").toUpperCase()
+    : "C";
+
   if (showContract && isFinalized) {
     return (
       <div className="pg-page">
@@ -689,7 +508,7 @@ export default function ProposalNegotiation() {
               <div className="neg-contract-parties">
                 <div className="neg-contract-party">
                   <span className="neg-cp-label">Client</span>
-                  <span className="neg-cp-val">{project.client}</span>
+                  <span className="neg-cp-val">{project.client_name}</span>
                 </div>
                 <div className="neg-contract-arrow">↔</div>
                 <div className="neg-contract-party">
@@ -700,17 +519,15 @@ export default function ProposalNegotiation() {
               <div className="neg-contract-divider" />
               <div className="neg-contract-terms">
                 <div className="neg-ct-row"><span>Project</span><strong>{project.title}</strong></div>
-                <div className="neg-ct-row"><span>Category</span><strong>{project.sub}</strong></div>
+                <div className="neg-ct-row"><span>Category</span><strong>{project.sub_category}</strong></div>
                 <div className="neg-ct-row"><span>Agreed Bid</span><strong className="green">${deal?.bid}</strong></div>
                 <div className="neg-ct-row"><span>Delivery</span><strong>{deal?.timeline} days from start</strong></div>
-                <div className="neg-ct-row"><span>Payment</span><strong>Upon milestone approval</strong></div>
                 <div className="neg-ct-row"><span>Revisions</span><strong>Up to 3 rounds</strong></div>
                 <div className="neg-ct-row"><span>Status</span><strong className="green">Active ✓</strong></div>
               </div>
               <div className="neg-contract-divider" />
               <p className="neg-contract-note">
                 This contract was finalized on {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} via Proposalin.
-                Both parties agree to the terms outlined above.
               </p>
               <div className="neg-contract-actions">
                 <button className="neg-dl-btn" onClick={handleDownloadPDF}>
@@ -731,7 +548,6 @@ export default function ProposalNegotiation() {
       <Navbar />
       <div className="neg-body">
 
-        {/* ── HEADER ── */}
         <div className="neg-header">
           <button className="pg-back-btn" onClick={() => navigate("/projects/" + project.id)}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
@@ -740,26 +556,20 @@ export default function ProposalNegotiation() {
           <div className="neg-header-top">
             <div className="neg-header-info">
               <div className="neg-project-chip">
-                <span className="pg-chip-badge" style={{ background: catColor.bg, color: catColor.color }}>{project.sub}</span>
+                <span className="pg-chip-badge" style={{ background: catColor.bg, color: catColor.color }}>{project.sub_category}</span>
                 <span className="pg-chip-title">{project.title}</span>
-                <span className="pg-chip-client">· {project.client}</span>
+                <span className="pg-chip-client">· {project.client_name}</span>
               </div>
               <h1 className="neg-title">Proposal Negotiation</h1>
-              <p className="neg-subtitle">
-                Discuss terms, send counter offers, and finalize your agreement with {project.client}.
-              </p>
+              <p className="neg-subtitle">Discuss terms, send counter offers, and finalize your agreement with {project.client_name}.</p>
             </div>
             <StatusBadge status={isFinalized ? "finalized" : negotiationStatus === "awaiting_freelancer" ? "countered" : "pending"} />
           </div>
         </div>
 
-        {/* ── LAYOUT ── */}
         <div className="neg-layout">
 
-          {/* ── CHAT PANEL ── */}
           <div className="neg-chat-panel">
-
-            {/* Chat Header */}
             <div className="neg-chat-header">
               <div className="neg-chat-header-left">
                 <div className="neg-online-dot" />
@@ -768,7 +578,6 @@ export default function ProposalNegotiation() {
               <span className="neg-msg-count">{messages.length} messages</span>
             </div>
 
-            {/* Messages */}
             <div className="neg-messages">
               {messages.map(msg => {
                 if (msg.type === "system") {
@@ -787,34 +596,21 @@ export default function ProposalNegotiation() {
                   );
                 }
                 return (
-                  <ProposalBubble
-                    key={msg.id}
-                    msg={msg}
-                    clientInitials={project.clientAvatar}
-                    freelancerName={freelancerName}
-                  />
+                  <ProposalBubble key={msg.id} msg={msg} clientInitials={clientInitials} freelancerName={freelancerName} />
                 );
               })}
 
-              {/* Typing Indicator */}
               {isTyping && (
                 <div className="neg-msg-row neg-msg-row--left">
-                  <Avatar initials={project.clientAvatar} color="orange" size="sm" />
-                  <div className="neg-typing-bubble">
-                    <span /><span /><span />
-                  </div>
+                  <Avatar initials={clientInitials} color="orange" size="sm" />
+                  <div className="neg-typing-bubble"><span /><span /><span /></div>
                 </div>
               )}
-
               <div ref={chatBottomRef} />
             </div>
 
-            {/* Finalized Banner */}
-            {isFinalized && (
-              <FinalizedBanner deal={deal} onViewContract={() => setShowContract(true)} />
-            )}
+            {isFinalized && <FinalizedBanner deal={deal} onViewContract={() => setShowContract(true)} />}
 
-            {/* Composer */}
             {!isFinalized && (
               <div className="neg-composer">
                 {composerMode === "counter" ? (
@@ -828,29 +624,16 @@ export default function ProposalNegotiation() {
                 ) : (
                   <>
                     <div className="neg-composer-toolbar">
-                      <button
-                        className={`neg-toolbar-btn ${composerMode === "message" ? "active" : ""}`}
-                        onClick={() => setComposerMode("message")}
-                      >
+                      <button className={`neg-toolbar-btn ${composerMode === "message" ? "active" : ""}`} onClick={() => setComposerMode("message")}>
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                         Message
                       </button>
-                      <button
-                        className="neg-toolbar-btn neg-toolbar-btn--counter"
-                        onClick={() => setComposerMode("counter")}
-                      >
+                      <button className="neg-toolbar-btn neg-toolbar-btn--counter" onClick={() => setComposerMode("counter")}>
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48 2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48 2.83-2.83"/></svg>
                         Counter Offer
                       </button>
-                      <button
-                        className="neg-toolbar-btn neg-toolbar-btn--ai"
-                        onClick={handleAISuggest}
-                        disabled={isAISuggesting || isTyping}
-                        title="Let AI draft a reply based on the conversation"
-                      >
-                        {isAISuggesting ? (
-                          <span className="neg-spinner neg-spinner--sm neg-spinner--dark" />
-                        ) : (
+                      <button className="neg-toolbar-btn neg-toolbar-btn--ai" onClick={handleAISuggest} disabled={isAISuggesting || isTyping}>
+                        {isAISuggesting ? <span className="neg-spinner neg-spinner--sm neg-spinner--dark" /> : (
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
                         )}
                         AI Draft Reply
@@ -859,25 +642,19 @@ export default function ProposalNegotiation() {
                     <div className="neg-composer-input-row">
                       <textarea
                         className="neg-composer-textarea"
-                        placeholder={isTyping ? project.client + " is typing..." : "Reply to " + project.client + "…"}
+                        placeholder={isTyping ? project.client_name + " is typing..." : "Reply to " + project.client_name + "…"}
                         value={composerText}
                         onChange={e => setComposerText(e.target.value)}
                         rows={3}
                         disabled={isTyping}
-                        onKeyDown={e => {
-                          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSendMessage();
-                        }}
+                        onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSendMessage(); }}
                       />
-                      <button
-                        className="neg-send-msg-btn"
-                        onClick={handleSendMessage}
-                        disabled={!composerText.trim() || isTyping}
-                      >
+                      <button className="neg-send-msg-btn" onClick={handleSendMessage} disabled={!composerText.trim() || isTyping}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                       </button>
                     </div>
                     <p className="neg-composer-hint">
-                      {isTyping ? "⏳ " + project.client + " is typing a response..." : "⌘ + Enter to send · Tab to switch mode"}
+                      {isTyping ? "⏳ " + project.client_name + " is typing a response..." : "⌘ + Enter to send · Tab to switch mode"}
                     </p>
                   </>
                 )}
@@ -885,7 +662,6 @@ export default function ProposalNegotiation() {
             )}
           </div>
 
-          {/* ── SIDEBAR ── */}
           <ProposalSidebar
             project={project}
             currentTerms={currentTerms}
@@ -895,6 +671,7 @@ export default function ProposalNegotiation() {
             isFinalized={isFinalized}
             deal={deal}
           />
+
         </div>
       </div>
     </div>

@@ -113,6 +113,7 @@ const AnimatedPanel = () => {
 };
 
 export default function SignUpPage() {
+  const [name, setName] = useState("");
   const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
@@ -125,10 +126,30 @@ export default function SignUpPage() {
     setTimeout(() => setMounted(true), 50);
   }, []);
 
-  const handleSignUp = () => {
-    setLoading(true);
-    setTimeout(() => setLoading(false), 2000);
-  };
+ const handleSignUp = async () => {
+  setLoading(true);
+
+  try {
+    const res = await fetch('http://localhost:3001/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password, role: 'freelancer' })
+    });
+
+    const data = await res.json();
+
+    if (data.user) {
+      alert('Register berhasil! Silakan login.');
+      navigate('/login');
+    } else {
+      alert(data.message || 'Register gagal');
+    }
+  } catch (err) {
+    alert('Tidak bisa terhubung ke server');
+  } finally {
+    setLoading(false);
+  }
+};
 
 const goToLogin = () => {
     navigate("/login");
@@ -167,6 +188,18 @@ and send invoices in one place.<br/>
           </div>
 
           <div className="form-fields">
+
+          <div className="field-group">
+            <label className="label">Full Name</label>
+             <input
+              className="input-field"
+              type="text"
+              placeholder="Enter your Full Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+         </div>
+
 
             <div className="field-group">
               <label className="label">Email</label>

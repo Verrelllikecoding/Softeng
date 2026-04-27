@@ -140,13 +140,31 @@ export default function LoginPage() {
     setTimeout(() => setMounted(true), 50);
   }, []);
 
-  const handleLogin = () => {
-    setLoading(true);
+ const handleLogin = async () => {
+  setLoading(true);
 
-    setTimeout(() => {
-      setLoading(false);
-    }, 2000);
-  };
+  try {
+    const res = await fetch('http://localhost:3001/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+
+    if (data.token) {
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      navigate('/dashboard');
+    } else {
+      alert(data.message || 'Login gagal');
+    }
+  } catch (err) {
+    alert('Tidak bisa terhubung ke server');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="page-wrapper">

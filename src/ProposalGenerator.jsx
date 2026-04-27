@@ -1,29 +1,11 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "./ProposalGenerator.css";
 
-// Di ProposalGenerator.jsx, taruh di baris paling atas setelah import
-
-// ─── PROJECT DATA (same as ProjectDetail) ───────────────
-const PROJECTS = {
-  1: { id: 1, title: "E-Commerce Fashion Landing Page", sub: "Web Development", category: "Technology", budget: "$200", deadline: "Apr 15, 2025", client: "Andi Wijaya", image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=900&h=320&fit=crop" },
-  2: { id: 2, title: "ML Product Recommendation System", sub: "Machine Learning", category: "Technology", budget: "$800", deadline: "Apr 30, 2025", client: "Startup Teknologi", image: "https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=900&h=320&fit=crop" },
-  3: { id: 3, title: "Admin Dashboard UI Redesign", sub: "UI/UX Design", category: "Design & Creative", budget: "$330", deadline: "Apr 20, 2025", client: "Budi Santoso", image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=900&h=320&fit=crop" },
-  4: { id: 4, title: "Fintech Startup Brand Identity", sub: "Branding", category: "Design & Creative", budget: "$500", deadline: "May 10, 2025", client: "Rini Kusuma", image: "https://images.unsplash.com/photo-1634128221889-82ed6efebfc3?w=900&h=320&fit=crop" },
-  5: { id: 5, title: "Mobile RPG Character Illustration", sub: "Illustration", category: "Design & Creative", budget: "$265", deadline: "Apr 25, 2025", client: "GameStudio ID", image: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=900&h=320&fit=crop" },
-  6: { id: 6, title: "Google & Meta Ads Campaign Management", sub: "Digital Ads", category: "Marketing", budget: "$400", deadline: "May 1, 2025", client: "Toko Online Maju", image: "https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?w=900&h=320&fit=crop" },
-  7: { id: 7, title: "Tech Blog SEO Content Strategy", sub: "SEO & Content", category: "Marketing", budget: "$165", deadline: "May 5, 2025", client: "Media Digital", image: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=900&h=320&fit=crop" },
-  8: { id: 8, title: "FMCG Brand Social Media Strategy", sub: "Social Media", category: "Marketing", budget: "$530", deadline: "May 15, 2025", client: "PT Maju Bersama", image: "https://images.unsplash.com/photo-1611926653458-09294b3142bf?w=900&h=320&fit=crop" },
-  9: { id: 9, title: "F&B Startup Business Plan", sub: "Business Plan", category: "Business & Consulting", budget: "$300", deadline: "May 12, 2025", client: "Dian Pratiwi", image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=900&h=320&fit=crop" },
-  10: { id: 10, title: "Portfolio Financial Analysis & Investor Report", sub: "Financial Analysis", category: "Business & Consulting", budget: "$600", deadline: "May 20, 2025", client: "Venture Capital ID", image: "https://images.unsplash.com/photo-1642790106117-e829e14a795f?w=900&h=320&fit=crop" },
-  11: { id: 11, title: "Laundry Management Mobile Application", sub: "Mobile Development", category: "Technology", budget: "$1,000", deadline: "Jun 1, 2025", client: "Laundry Express", image: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=900&h=320&fit=crop" },
-  12: { id: 12, title: "Premium Batik Product Photography", sub: "Photography", category: "Design & Creative", budget: "$230", deadline: "May 8, 2025", client: "Batik Nusantara", image: "https://images.unsplash.com/photo-1606902965551-dce093cda6e7?w=900&h=320&fit=crop" },
-};
-
 const categoryColors = {
-  "Technology": { bg: "#e0f2fe", color: "#0369a1" },
-  "Design & Creative": { bg: "#fdf4ff", color: "#7e22ce" },
-  "Marketing": { bg: "#f0fdf4", color: "#15803d" },
+  "Technology":            { bg: "#e0f2fe", color: "#0369a1" },
+  "Design & Creative":     { bg: "#fdf4ff", color: "#7e22ce" },
+  "Marketing":             { bg: "#f0fdf4", color: "#15803d" },
   "Business & Consulting": { bg: "#fff7ed", color: "#c2410c" },
 };
 
@@ -32,6 +14,7 @@ const EXPERIENCE_OPTIONS = ["Less than 1 year", "1–3 years", "3–5 years", "5
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("user"));
   return (
     <nav className="pnav">
       <div className="pnav-inner">
@@ -45,15 +28,20 @@ const Navbar = () => {
           <span onClick={() => navigate("/")}>Pricing</span>
         </div>
         <div className="pnav-actions">
-          <button className="btn-pnav-login" onClick={() => navigate("/login")}>Log In</button>
-          <button className="btn-pnav-signup" onClick={() => navigate("/signup")}>Sign Up Free</button>
+          {user ? (
+            <button className="btn-pnav-login" onClick={() => navigate("/dashboard")}>Dashboard</button>
+          ) : (
+            <>
+              <button className="btn-pnav-login" onClick={() => navigate("/login")}>Log In</button>
+              <button className="btn-pnav-signup" onClick={() => navigate("/signup")}>Sign Up Free</button>
+            </>
+          )}
         </div>
       </div>
     </nav>
   );
 };
 
-// ─── STEP INDICATOR ─────────────────────────────────────
 const StepIndicator = ({ currentStep }) => {
   const steps = ["Your Profile", "Proposal Settings", "Review & Send"];
   return (
@@ -78,26 +66,28 @@ const StepIndicator = ({ currentStep }) => {
   );
 };
 
-// ─── MAIN COMPONENT ──────────────────────────────────────
 export default function ProposalGenerator() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const project = PROJECTS[parseInt(id)] || PROJECTS[1];
-  const catColor = categoryColors[project.category] || { bg: "#f1f5f9", color: "#475569" };
+  const previewRef = useRef(null);
 
+  const [project, setProject] = useState(null);
+  const [loadingProject, setLoadingProject] = useState(true);
   const [step, setStep] = useState(1);
   const [generating, setGenerating] = useState(false);
   const [proposal, setProposal] = useState(null);
-  const [sendStatus, setSendStatus] = useState(null); // null | "sent"
-  const previewRef = useRef(null);
+  const [sendStatus, setSendStatus] = useState(null);
+  const [sending, setSending] = useState(false);
 
-  // Form state
+  const user = JSON.parse(localStorage.getItem("user"));
+  const token = localStorage.getItem("token");
+
   const [form, setForm] = useState({
-    freelancerName: "",
+    freelancerName: user?.name || "",
     experience: "3–5 years",
     skills: "",
     portfolio: "",
-    bidAmount: project.budget.replace(/[^0-9]/g, ""),
+    bidAmount: "",
     deliveryDays: "14",
     tone: "Professional & Formal",
     highlights: "",
@@ -106,7 +96,30 @@ export default function ProposalGenerator() {
 
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
 
-  // ── Generate proposal via Claude API ──
+  useEffect(() => {
+    if (!token) { navigate("/login"); return; }
+    fetch(`http://localhost:3001/api/projects/${id}`)
+      .then(res => res.json())
+      .then(data => {
+        setProject(data);
+        setForm(prev => ({
+          ...prev,
+          bidAmount: (data.budget || "").replace(/[^0-9]/g, ""),
+        }));
+      })
+      .catch(err => console.error(err))
+      .finally(() => setLoadingProject(false));
+  }, [id]);
+
+  // Parse skills dari project
+  const projectSkills = project
+    ? Array.isArray(project.skills)
+      ? project.skills.join(", ")
+      : project.skills
+        ? project.skills.replace(/[{}"]/g, "").split(",").map(s => s.trim()).join(", ")
+        : project.sub_category || ""
+    : "";
+
   const generateProposal = async () => {
     setGenerating(true);
     setProposal(null);
@@ -115,15 +128,17 @@ export default function ProposalGenerator() {
 
 PROJECT DETAILS:
 - Title: ${project.title}
-- Category: ${project.sub}
+- Category: ${project.sub_category}
+- Required Skills: ${projectSkills}
 - Client Budget: ${project.budget}
 - Deadline: ${project.deadline}
-- Client Name: ${project.client}
+- Client Name: ${project.client_name}
+- Description: ${project.description}
 
 FREELANCER DETAILS:
 - Name: ${form.freelancerName || "the freelancer"}
 - Years of Experience: ${form.experience}
-- Relevant Skills: ${form.skills || project.sub + " expertise"}
+- Relevant Skills: ${form.skills || projectSkills}
 - Portfolio/Past Work: ${form.portfolio || "not specified"}
 - Bid Amount: $${form.bidAmount}
 - Proposed Delivery: ${form.deliveryDays} days
@@ -141,10 +156,8 @@ Write a full proposal with these sections:
 
 Format with clear section headers using **Header Name** markdown. Keep it concise (300–400 words total), persuasive, and tailored. Tone: ${form.tone}.`;
 
-
     const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
     try {
-
       const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -152,18 +165,15 @@ Format with clear section headers using **Header Name** markdown. Keep it concis
           "Authorization": `Bearer ${GROQ_API_KEY}`,
         },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant",   
+          model: "llama-3.1-8b-instant",
           max_tokens: 1000,
-          temperature: 0.7,              
+          temperature: 0.7,
           messages: [
             {
               role: "system",
               content: "You are an expert freelance proposal writer. Write compelling, professional proposals that win clients. Always use **Header** markdown for section headers.",
             },
-            {
-              role: "user",
-              content: prompt,
-            },
+            { role: "user", content: prompt },
           ],
         }),
       });
@@ -179,19 +189,17 @@ Format with clear section headers using **Header Name** markdown. Keep it concis
       setStep(3);
     } catch (err) {
       console.error("Groq error:", err);
-      setProposal(`❌ Failed to generate: ${err.message}\n\nPastikan GROQ_API_KEY sudah diisi dengan benar di ProposalGenerator.jsx`);
+      setProposal(`❌ Failed to generate: ${err.message}\n\nPastikan VITE_GROQ_API_KEY sudah diisi di file .env`);
       setStep(3);
     } finally {
       setGenerating(false);
     }
   };
 
-  // ── Parse markdown-ish proposal into JSX ──
   const renderProposal = (text) => {
     if (!text) return null;
     return text.split("\n").map((line, i) => {
       if (!line.trim()) return <div key={i} className="prop-spacer" />;
-      // Bold section headers: **Header**
       const headerMatch = line.match(/^\*\*(.+?)\*\*/);
       if (headerMatch) {
         const rest = line.replace(/^\*\*(.+?)\*\*/, "").trim();
@@ -202,41 +210,69 @@ Format with clear section headers using **Header Name** markdown. Keep it concis
           </div>
         );
       }
-      // Inline bold
       const parts = line.split(/\*\*(.+?)\*\*/g);
       return (
         <p key={i} className="prop-line">
-          {parts.map((part, j) =>
-            j % 2 === 1 ? <strong key={j}>{part}</strong> : part
-          )}
+          {parts.map((part, j) => j % 2 === 1 ? <strong key={j}>{part}</strong> : part)}
         </p>
       );
     });
   };
 
-const handleSend = () => {
-  // Simpan data proposal ke sessionStorage
-  sessionStorage.setItem("activeProposal", JSON.stringify({
-    proposalText: proposal,          // teks hasil AI
-    bid: parseInt(form.bidAmount),   // bid freelancer
-    timeline: parseInt(form.deliveryDays), // timeline
-    freelancerName: form.name,       // nama freelancer
-    projectId: id,
-  }));
+  // ── Send proposal ke backend ──
+  const handleSend = async () => {
+    if (!token) { navigate("/login"); return; }
+    setSending(true);
+    try {
+      const res = await fetch("http://localhost:3001/api/proposals", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          project_id: project.id,
+          content: proposal,
+        }),
+      });
 
-  setSendStatus("sent");
-  setTimeout(() => navigate(`/projects/${id}/negotiate`), 1500);
-};
+      const data = await res.json();
+
+      if (data.proposal) {
+        // Simpan ke sessionStorage untuk ProposalNegotiation
+        sessionStorage.setItem("activeProposal", JSON.stringify({
+          proposalText: proposal,
+          bid: parseInt(form.bidAmount),
+          timeline: parseInt(form.deliveryDays),
+          freelancerName: form.freelancerName || user?.name || "You",
+          projectId: id,
+        }));
+        setSendStatus("sent");
+        setTimeout(() => navigate(`/projects/${id}/negotiate`), 1500);
+      } else {
+        alert(data.message || "Gagal mengirim proposal");
+      }
+    } catch (err) {
+      alert("Tidak bisa terhubung ke server");
+    } finally {
+      setSending(false);
+    }
+  };
 
   const handleRevise = () => {
     setProposal(null);
     setStep(2);
-    setTimeout(() => {
-      set("revisionNote", "");
-    }, 100);
+    set("revisionNote", "");
   };
 
-  // ─── SENT CONFIRMATION ───────────────────────────────
+  if (loadingProject || !project) return (
+    <div className="pg-page"><Navbar />
+      <p style={{ textAlign: "center", padding: "4rem", color: "#888" }}>Loading project...</p>
+    </div>
+  );
+
+  const catColor = categoryColors[project.category] || { bg: "#f1f5f9", color: "#475569" };
+
   if (sendStatus === "sent") {
     return (
       <div className="pg-page">
@@ -247,7 +283,7 @@ const handleSend = () => {
               <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
             <h2 className="sent-title">Proposal Sent!</h2>
-            <p className="sent-desc">Your proposal for <strong>{project.title}</strong> has been submitted to <strong>{project.client}</strong>. You'll be notified once they respond.</p>
+            <p className="sent-desc">Your proposal for <strong>{project.title}</strong> has been submitted to <strong>{project.client_name}</strong>. Redirecting to negotiation...</p>
             <div className="sent-actions">
               <button className="btn-sent-primary" onClick={() => navigate("/projects")}>Browse More Projects</button>
               <button className="btn-sent-ghost" onClick={() => { setSendStatus(null); setStep(1); setProposal(null); }}>Create Another</button>
@@ -261,10 +297,8 @@ const handleSend = () => {
   return (
     <div className="pg-page">
       <Navbar />
-
       <div className="pg-body">
 
-        {/* ── HEADER ── */}
         <div className="pg-header">
           <button className="pg-back-btn" onClick={() => navigate(`/projects/${project.id}`)}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
@@ -272,9 +306,9 @@ const handleSend = () => {
           </button>
           <div className="pg-header-center">
             <div className="pg-project-chip">
-              <span className="pg-chip-badge" style={{ background: catColor.bg, color: catColor.color }}>{project.sub}</span>
+              <span className="pg-chip-badge" style={{ background: catColor.bg, color: catColor.color }}>{project.sub_category}</span>
               <span className="pg-chip-title">{project.title}</span>
-              <span className="pg-chip-client">· {project.client}</span>
+              <span className="pg-chip-client">· {project.client_name}</span>
             </div>
             <h1 className="pg-title">Generate Your Proposal</h1>
             <p className="pg-subtitle">Fill in your details and let AI craft a compelling, personalized proposal in seconds.</p>
@@ -282,7 +316,6 @@ const handleSend = () => {
           <StepIndicator currentStep={step} />
         </div>
 
-        {/* ── SPLIT LAYOUT ── */}
         <div className="pg-split">
 
           {/* ── LEFT: INPUT PANEL ── */}
@@ -324,11 +357,13 @@ const handleSend = () => {
                   <label>Relevant Skills</label>
                   <input
                     type="text"
-                    placeholder="e.g. React.js, Tailwind CSS, Figma"
+                    placeholder={projectSkills || "e.g. React.js, Tailwind CSS, Figma"}
                     value={form.skills}
                     onChange={e => set("skills", e.target.value)}
                   />
-                  <span className="pg-hint">Comma-separated list of your top skills for this project</span>
+                  <span className="pg-hint">
+                    {projectSkills ? `Required: ${projectSkills}` : "Comma-separated list of your top skills"}
+                  </span>
                 </div>
 
                 <div className="pg-field">
@@ -360,24 +395,14 @@ const handleSend = () => {
                     <label>Your Bid Amount</label>
                     <div className="pg-input-prefix">
                       <span>$</span>
-                      <input
-                        type="number"
-                        value={form.bidAmount}
-                        onChange={e => set("bidAmount", e.target.value)}
-                        min="1"
-                      />
+                      <input type="number" value={form.bidAmount} onChange={e => set("bidAmount", e.target.value)} min="1" />
                     </div>
                     <span className="pg-hint">Client budget: {project.budget}</span>
                   </div>
                   <div className="pg-field">
                     <label>Delivery Time</label>
                     <div className="pg-input-suffix">
-                      <input
-                        type="number"
-                        value={form.deliveryDays}
-                        onChange={e => set("deliveryDays", e.target.value)}
-                        min="1"
-                      />
+                      <input type="number" value={form.deliveryDays} onChange={e => set("deliveryDays", e.target.value)} min="1" />
                       <span>days</span>
                     </div>
                     <span className="pg-hint">Deadline: {project.deadline}</span>
@@ -403,7 +428,7 @@ const handleSend = () => {
                   <label>Key Selling Points <span className="optional">optional</span></label>
                   <textarea
                     rows={3}
-                    placeholder="e.g. I've built 5 similar e-commerce projects, I offer 24/7 communication, I include free revisions..."
+                    placeholder="e.g. I've built 5 similar projects, I offer 24/7 communication, I include free revisions..."
                     value={form.highlights}
                     onChange={e => set("highlights", e.target.value)}
                   />
@@ -415,7 +440,7 @@ const handleSend = () => {
                     <label>Revision Instructions <span className="optional">for regeneration</span></label>
                     <textarea
                       rows={2}
-                      placeholder="e.g. Make it shorter, emphasize my ML experience more, sound more confident..."
+                      placeholder="e.g. Make it shorter, emphasize my experience more, sound more confident..."
                       value={form.revisionNote}
                       onChange={e => set("revisionNote", e.target.value)}
                     />
@@ -433,15 +458,9 @@ const handleSend = () => {
                     disabled={generating}
                   >
                     {generating ? (
-                      <>
-                        <span className="pg-spinner" />
-                        Generating…
-                      </>
+                      <><span className="pg-spinner" />Generating…</>
                     ) : (
-                      <>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-                        Generate Proposal
-                      </>
+                      <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>Generate Proposal</>
                     )}
                   </button>
                 </div>
@@ -462,7 +481,7 @@ const handleSend = () => {
                   </div>
                   <div className="pg-sum-row">
                     <span className="pg-sum-label">Client</span>
-                    <span className="pg-sum-val">{project.client}</span>
+                    <span className="pg-sum-val">{project.client_name}</span>
                   </div>
                   <div className="pg-sum-row">
                     <span className="pg-sum-label">Your Bid</span>
@@ -488,9 +507,12 @@ const handleSend = () => {
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                     Revise Proposal
                   </button>
-                  <button className="pg-send-btn" onClick={handleSend}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                    Send Proposal
+                  <button className="pg-send-btn" onClick={handleSend} disabled={sending}>
+                    {sending ? (
+                      <><span className="pg-spinner" />Sending...</>
+                    ) : (
+                      <><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Send Proposal</>
+                    )}
                   </button>
                 </div>
               </div>
@@ -513,13 +535,12 @@ const handleSend = () => {
             </div>
 
             <div className="pg-preview-doc">
-              {/* Document Header */}
               <div className="pg-doc-header">
                 <div className="pg-doc-logo">Proposal<span>in</span></div>
                 <div className="pg-doc-meta">
                   <div className="pg-doc-meta-row">
                     <span className="pg-doc-meta-label">To</span>
-                    <span className="pg-doc-meta-val">{project.client}</span>
+                    <span className="pg-doc-meta-val">{project.client_name}</span>
                   </div>
                   <div className="pg-doc-meta-row">
                     <span className="pg-doc-meta-label">Project</span>
@@ -538,17 +559,13 @@ const handleSend = () => {
 
               <div className="pg-doc-divider" />
 
-              {/* Proposal Body */}
               <div className="pg-doc-body">
                 {generating && (
                   <div className="pg-generating">
-                    <div className="pg-gen-dots">
-                      <span /><span /><span />
-                    </div>
+                    <div className="pg-gen-dots"><span /><span /><span /></div>
                     <p>Crafting your proposal…</p>
                   </div>
                 )}
-
                 {!generating && !proposal && (
                   <div className="pg-empty-preview">
                     <div className="pg-empty-icon">
@@ -558,15 +575,11 @@ const handleSend = () => {
                     <p className="pg-empty-sub">Fill in your details and click <strong>Generate Proposal</strong> to create a personalized, AI-crafted proposal.</p>
                   </div>
                 )}
-
                 {!generating && proposal && (
-                  <div className="pg-proposal-text">
-                    {renderProposal(proposal)}
-                  </div>
+                  <div className="pg-proposal-text">{renderProposal(proposal)}</div>
                 )}
               </div>
 
-              {/* Document Footer */}
               {proposal && !generating && (
                 <div className="pg-doc-footer">
                   <span>Generated by Proposalin AI</span>
