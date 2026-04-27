@@ -21,7 +21,7 @@ const Navbar = () => {
     <nav className={`navbar ${scrolled ? "scrolled" : ""}`}>
       <div className="nav-inner">
         <div className="nav-logo" onClick={() => scrollTo("hero")}>
-          Proposal<span className="nav-accent">in</span>
+          Scope<span className="nav-accent">Sync</span>
         </div>
         <div className="nav-links">
 

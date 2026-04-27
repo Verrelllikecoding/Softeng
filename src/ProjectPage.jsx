@@ -3,39 +3,170 @@ import { useNavigate } from "react-router-dom";
 import "./ProjectPage.css";
 
 const PROJECTS = [
-  { id: 1, title: "Landing Page E-Commerce Fashion", category: "Technology", sub: "Web Development", budget: "Rp 3.000.000", deadline: "15 Apr 2025", client: "Andi Wijaya", clientAvatar: "AW", desc: "Butuh landing page modern untuk brand fashion lokal dengan integrasi payment gateway." },
-  { id: 2, title: "Machine Learning Recommendation System", category: "Technology", sub: "Machine Learning", budget: "Rp 12.000.000", deadline: "30 Apr 2025", client: "Startup Teknologi", clientAvatar: "ST", desc: "Sistem rekomendasi produk berbasis collaborative filtering untuk platform marketplace." },
-  { id: 3, title: "Redesign Dashboard Admin App", category: "Design & Creative", sub: "UI/UX Design", budget: "Rp 5.000.000", deadline: "20 Apr 2025", client: "Budi Santoso", clientAvatar: "BS", desc: "Redesign dashboard admin aplikasi logistik agar lebih intuitif dan modern." },
-  { id: 4, title: "Branding & Visual Identity Startup", category: "Design & Creative", sub: "Branding", budget: "Rp 7.500.000", deadline: "10 Mei 2025", client: "Rini Kusuma", clientAvatar: "RK", desc: "Pembuatan logo, brand guideline, dan aset visual untuk startup fintech baru." },
-  { id: 5, title: "Ilustrasi Karakter untuk Game Mobile", category: "Design & Creative", sub: "Ilustrasi", budget: "Rp 4.000.000", deadline: "25 Apr 2025", client: "GameStudio ID", clientAvatar: "GS", desc: "Butuh 10 karakter hero dan villain untuk game RPG mobile dengan gaya anime." },
-  { id: 6, title: "Kampanye Google Ads & Meta Ads", category: "Marketing", sub: "Digital Ads", budget: "Rp 6.000.000", deadline: "1 Mei 2025", client: "Toko Online Maju", clientAvatar: "TM", desc: "Pengelolaan iklan berbayar untuk meningkatkan ROAS produk skincare lokal." },
-  { id: 7, title: "Konten SEO Blog Teknologi", category: "Marketing", sub: "SEO & Content", budget: "Rp 2.500.000", deadline: "5 Mei 2025", client: "Media Digital", clientAvatar: "MD", desc: "Penulisan 20 artikel SEO-friendly untuk blog teknologi dengan target keyword spesifik." },
-  { id: 8, title: "Strategi Social Media Brand FMCG", category: "Marketing", sub: "Social Media", budget: "Rp 8.000.000", deadline: "15 Mei 2025", client: "PT Maju Bersama", clientAvatar: "MB", desc: "Pengelolaan konten dan strategi posting untuk Instagram, TikTok, dan Twitter." },
-  { id: 9, title: "Business Plan Startup Kuliner", category: "Business & Consulting", sub: "Business Plan", budget: "Rp 4.500.000", deadline: "12 Mei 2025", client: "Dian Pratiwi", clientAvatar: "DP", desc: "Penyusunan business plan lengkap untuk startup kuliner yang akan pitching ke investor." },
-  { id: 10, title: "Analisis Keuangan & Laporan Investor", category: "Business & Consulting", sub: "Financial Analysis", budget: "Rp 9.000.000", deadline: "20 Mei 2025", client: "Venture Capital ID", clientAvatar: "VC", desc: "Analisis laporan keuangan 3 perusahaan portofolio dan penyusunan investor deck." },
-  { id: 11, title: "Mobile App Manajemen Laundry", category: "Technology", sub: "Mobile Development", budget: "Rp 15.000.000", deadline: "1 Jun 2025", client: "Laundry Express", clientAvatar: "LE", desc: "Aplikasi mobile Android & iOS untuk manajemen order, pickup, dan delivery laundry." },
-  { id: 12, title: "Fotografi Produk Katalog Online", category: "Design & Creative", sub: "Photography", budget: "Rp 3.500.000", deadline: "8 Mei 2025", client: "Batik Nusantara", clientAvatar: "BN", desc: "Sesi foto produk untuk 50 item batik premium untuk katalog e-commerce dan lookbook." },
+  {
+    id: 1,
+    title: "E-Commerce Fashion Landing Page",
+    category: "Technology",
+    sub: "Web Development",
+    budget: "$200",
+    deadline: "Apr 15, 2025",
+    client: "Andi Wijaya",
+    clientAvatar: "AW",
+    desc: "Development of a modern, conversion-optimized landing page for a local fashion brand, including payment gateway integration and mobile-responsive design.",
+    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=200&fit=crop"
+  },
+  {
+    id: 2,
+    title: "ML Product Recommendation System",
+    category: "Technology",
+    sub: "Machine Learning",
+    budget: "$800",
+    deadline: "Apr 30, 2025",
+    client: "Startup Teknologi",
+    clientAvatar: "ST",
+    desc: "Building a collaborative filtering-based recommendation engine for a marketplace platform to enhance product discovery and user engagement.",
+    image: "https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=400&h=200&fit=crop"
+  },
+  {
+    id: 3,
+    title: "Admin Dashboard UI Redesign",
+    category: "Design & Creative",
+    sub: "UI/UX Design",
+    budget: "$330",
+    deadline: "Apr 20, 2025",
+    client: "Budi Santoso",
+    clientAvatar: "BS",
+    desc: "Comprehensive redesign of a logistics application's admin dashboard to improve usability, data visibility, and overall user experience.",
+    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=200&fit=crop"
+  },
+  {
+    id: 4,
+    title: "Fintech Startup Brand Identity",
+    category: "Design & Creative",
+    sub: "Branding",
+    budget: "$500",
+    deadline: "May 10, 2025",
+    client: "Rini Kusuma",
+    clientAvatar: "RK",
+    desc: "Creation of a complete visual identity system including logo design, brand guidelines, and marketing assets for an emerging fintech startup.",
+    image: "https://images.unsplash.com/photo-1634128221889-82ed6efebfc3?w=400&h=200&fit=crop"
+  },
+  {
+    id: 5,
+    title: "Mobile RPG Character Illustration",
+    category: "Design & Creative",
+    sub: "Illustration",
+    budget: "$265",
+    deadline: "Apr 25, 2025",
+    client: "GameStudio ID",
+    clientAvatar: "GS",
+    desc: "Design and illustration of 10 hero and villain characters in anime style for a mobile RPG game, including concept art and final production assets.",
+    image: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400&h=200&fit=crop"
+  },
+  {
+    id: 6,
+    title: "Google & Meta Ads Campaign Management",
+    category: "Marketing",
+    sub: "Digital Ads",
+    budget: "$400",
+    deadline: "May 1, 2025",
+    client: "Toko Online Maju",
+    clientAvatar: "TM",
+    desc: "End-to-end management of paid advertising campaigns across Google and Meta platforms to maximize ROAS for a local skincare product line.",
+    image: "https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?w=400&h=200&fit=crop"
+  },
+  {
+    id: 7,
+    title: "Tech Blog SEO Content Strategy",
+    category: "Marketing",
+    sub: "SEO & Content",
+    budget: "$165",
+    deadline: "May 5, 2025",
+    client: "Media Digital",
+    clientAvatar: "MD",
+    desc: "Production of 20 SEO-optimized articles for a technology blog, targeting high-value keywords to drive organic traffic and domain authority.",
+    image: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=400&h=200&fit=crop"
+  },
+  {
+    id: 8,
+    title: "FMCG Brand Social Media Strategy",
+    category: "Marketing",
+    sub: "Social Media",
+    budget: "$530",
+    deadline: "May 15, 2025",
+    client: "PT Maju Bersama",
+    clientAvatar: "MB",
+    desc: "Development and execution of a multi-platform social media strategy for Instagram, TikTok, and Twitter to elevate brand presence and audience engagement.",
+    image: "https://images.unsplash.com/photo-1611926653458-09294b3142bf?w=400&h=200&fit=crop"
+  },
+  {
+    id: 9,
+    title: "F&B Startup Business Plan",
+    category: "Business & Consulting",
+    sub: "Business Plan",
+    budget: "$300",
+    deadline: "May 12, 2025",
+    client: "Dian Pratiwi",
+    clientAvatar: "DP",
+    desc: "Preparation of a comprehensive business plan for an F&B startup seeking seed investment, including market analysis, financial projections, and pitch deck.",
+    image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&h=200&fit=crop"
+  },
+  {
+    id: 10,
+    title: "Portfolio Financial Analysis & Investor Report",
+    category: "Business & Consulting",
+    sub: "Financial Analysis",
+    budget: "$600",
+    deadline: "May 20, 2025",
+    client: "Venture Capital ID",
+    clientAvatar: "VC",
+    desc: "In-depth financial analysis of three portfolio companies with consolidated investor reporting and strategic performance benchmarking.",
+    image: "https://images.unsplash.com/photo-1642790106117-e829e14a795f?w=400&h=200&fit=crop"
+  },
+  {
+    id: 11,
+    title: "Laundry Management Mobile Application",
+    category: "Technology",
+    sub: "Mobile Development",
+    budget: "$1,000",
+    deadline: "Jun 1, 2025",
+    client: "Laundry Express",
+    clientAvatar: "LE",
+    desc: "Full-stack Android and iOS mobile application for managing laundry orders, real-time pickup scheduling, and last-mile delivery tracking.",
+    image: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400&h=200&fit=crop"
+  },
+  {
+    id: 12,
+    title: "Premium Batik Product Photography",
+    category: "Design & Creative",
+    sub: "Photography",
+    budget: "$230",
+    deadline: "May 8, 2025",
+    client: "Batik Nusantara",
+    clientAvatar: "BN",
+    desc: "Professional photoshoot of 50 premium batik items for e-commerce catalogues and editorial lookbooks, including styling, lighting, and post-production.",
+    image: "https://images.unsplash.com/photo-1606902965551-dce093cda6e7?w=400&h=200&fit=crop"
+  },
 ];
 
 const CATEGORIES = {
   "Technology": ["Web Development", "Mobile Development", "Machine Learning", "Data Analysis"],
-  "Design & Creative": ["UI/UX Design", "Branding", "Ilustrasi", "Photography"],
+  "Design & Creative": ["UI/UX Design", "Branding", "Illustration", "Photography"],
   "Marketing": ["Digital Ads", "SEO & Content", "Social Media", "Email Marketing"],
   "Business & Consulting": ["Business Plan", "Financial Analysis", "Market Research", "HR Consulting"],
 };
 
-const SORT_OPTIONS = ["Relevansi", "Budget Tertinggi", "Budget Terendah", "Deadline Terdekat"];
+const SORT_OPTIONS = ["Relevance", "Highest Budget", "Lowest Budget", "Nearest Deadline"];
 
 const categoryColors = {
-  "Technology": { bg: "#dbeafe", color: "#1d4ed8" },
-  "Design & Creative": { bg: "#fce7f3", color: "#be185d" },
-  "Marketing": { bg: "#d1fae5", color: "#065f46" },
-  "Business & Consulting": { bg: "#fef3c7", color: "#92400e" },
+  "Technology": { bg: "#e0f2fe", color: "#0369a1" },
+  "Design & Creative": { bg: "#fdf4ff", color: "#7e22ce" },
+  "Marketing": { bg: "#f0fdf4", color: "#15803d" },
+  "Business & Consulting": { bg: "#fff7ed", color: "#c2410c" },
 };
 
 const Navbar = () => {
   const navigate = useNavigate();
-  const [openMenu, setOpenMenu] = useState(null);
 
   return (
     <nav className="pnav">
@@ -62,7 +193,7 @@ export default function ProjectPage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [selectedSubs, setSelectedSubs] = useState([]);
-  const [sort, setSort] = useState("Relevansi");
+  const [sort, setSort] = useState("Relevance");
   const [expandedCats, setExpandedCats] = useState(["Technology", "Design & Creative", "Marketing", "Business & Consulting"]);
 
   const toggleSub = (sub) => {
@@ -77,14 +208,16 @@ export default function ProjectPage() {
     );
   };
 
+  const budgetToNum = (b) => parseInt(b.replace(/[^0-9]/g, ""));
+
   const filtered = PROJECTS.filter(p => {
     const matchSearch = p.title.toLowerCase().includes(search.toLowerCase()) ||
       p.sub.toLowerCase().includes(search.toLowerCase());
     const matchSub = selectedSubs.length === 0 || selectedSubs.includes(p.sub);
     return matchSearch && matchSub;
   }).sort((a, b) => {
-    if (sort === "Budget Tertinggi") return parseInt(b.budget.replace(/\D/g, "")) - parseInt(a.budget.replace(/\D/g, ""));
-    if (sort === "Budget Terendah") return parseInt(a.budget.replace(/\D/g, "")) - parseInt(b.budget.replace(/\D/g, ""));
+    if (sort === "Highest Budget") return budgetToNum(b.budget) - budgetToNum(a.budget);
+    if (sort === "Lowest Budget") return budgetToNum(a.budget) - budgetToNum(b.budget);
     return 0;
   });
 
@@ -93,9 +226,9 @@ export default function ProjectPage() {
       <Navbar />
 
       <div className="project-body">
-  
+
         <aside className="sidebar">
-          <div className="sidebar-title">Filter Kategori</div>
+          <div className="sidebar-title">Filter by Category</div>
 
           {Object.entries(CATEGORIES).map(([cat, subs]) => (
             <div className="sidebar-cat" key={cat}>
@@ -122,43 +255,41 @@ export default function ProjectPage() {
 
           {selectedSubs.length > 0 && (
             <button className="btn-clear-filter" onClick={() => setSelectedSubs([])}>
-              Hapus Filter ({selectedSubs.length})
+              Clear Filters ({selectedSubs.length})
             </button>
           )}
         </aside>
 
-     
         <main className="project-main">
-        
+
           <div className="project-toolbar">
             <div className="search-box">
               <svg width="16" height="16" fill="none" stroke="#94a3b8" strokeWidth="2" viewBox="0 0 24 24">
                 <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
               </svg>
               <input
-                placeholder="Cari project..."
+                placeholder="Search projects..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
               />
             </div>
 
             <div className="project-count">
-              <span className="count-num">{filtered.length}</span> project ditemukan
+              <span className="count-num">{filtered.length}</span> projects found
             </div>
 
             <div className="sort-box">
-              <span>Urutkan:</span>
+              <span>Sort by:</span>
               <select value={sort} onChange={e => setSort(e.target.value)}>
                 {SORT_OPTIONS.map(o => <option key={o}>{o}</option>)}
               </select>
             </div>
 
             <button className="btn-create-project" onClick={() => navigate("/signup")}>
-              + Post Project
+              + Post a Project
             </button>
           </div>
 
-         
           {selectedSubs.length > 0 && (
             <div className="active-filters">
               {selectedSubs.map(sub => (
@@ -170,27 +301,14 @@ export default function ProjectPage() {
             </div>
           )}
 
-         
           {filtered.length > 0 ? (
             <div className="project-grid">
               {filtered.map(p => (
                 <div className="project-card" key={p.id}>
-             
+
                   <div className="card-thumb">
-                    <div className="card-thumb-icon">
-                      {p.sub === "Web Development" ? "💻" :
-                       p.sub === "UI/UX Design" ? "🎨" :
-                       p.sub === "Mobile Development" ? "📱" :
-                       p.sub === "Machine Learning" ? "🤖" :
-                       p.sub === "Digital Ads" ? "📢" :
-                       p.sub === "SEO & Content" ? "✍️" :
-                       p.sub === "Social Media" ? "📱" :
-                       p.sub === "Branding" ? "✨" :
-                       p.sub === "Photography" ? "📷" :
-                       p.sub === "Ilustrasi" ? "🖌️" :
-                       p.sub === "Business Plan" ? "📊" :
-                       p.sub === "Financial Analysis" ? "💹" : "📁"}
-                    </div>
+                    <img src={p.image} alt={p.title} className="card-thumb-img" />
+                    <div className="card-thumb-overlay" />
                     <span
                       className="card-cat-badge"
                       style={{ background: categoryColors[p.category]?.bg, color: categoryColors[p.category]?.color }}
@@ -199,19 +317,24 @@ export default function ProjectPage() {
                     </span>
                   </div>
 
-              
                   <div className="card-content">
                     <h3 className="card-title">{p.title}</h3>
+                    <div className="card-title-sep" />
                     <p className="card-desc">{p.desc}</p>
+                    <div className="card-spacer" />
 
                     <div className="card-meta">
                       <div className="card-meta-item">
-                        <span className="meta-icon">💰</span>
-                        <span className="meta-val">{p.budget}</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="meta-svg green">
+                          <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                        </svg>
+                        <span className="meta-val deadline-val">{p.deadline}</span>
                       </div>
                       <div className="card-meta-item">
-                        <span className="meta-icon">📅</span>
-                        <span className="meta-val">{p.deadline}</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="meta-svg blue">
+                          <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                        </svg>
+                        <span className="meta-val budget-val">{p.budget}</span>
                       </div>
                     </div>
 
@@ -224,8 +347,8 @@ export default function ProjectPage() {
                         </div>
                       </div>
                       <button className="btn-take" onClick={() => navigate(`/projects/${p.id}`)}>
-                         Lihat Detail →
-                    </button>
+                        View Detail <span className="btn-arrow">›</span>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -234,8 +357,8 @@ export default function ProjectPage() {
           ) : (
             <div className="empty-state">
               <div className="empty-icon">🔍</div>
-              <div className="empty-title">Tidak ada project ditemukan</div>
-              <div className="empty-sub">Coba ubah filter atau kata kunci pencarian</div>
+              <div className="empty-title">No Projects Found</div>
+              <div className="empty-sub">Try adjusting your filters or search query</div>
             </div>
           )}
         </main>

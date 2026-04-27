@@ -231,7 +231,7 @@ body {
   padding: 8px 18px;
   border: none;
   border-radius: 8px;
-  background: var(--blue);
+  background: var(--blue-dark);
   color: white;
   font-size: 13px;
   font-family: 'DM Sans', sans-serif;
