@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "./LandingPage.css";
 
+// ─── NAVBAR ───────────────────────────────────────────────────
 const Navbar = () => {
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
@@ -15,6 +16,7 @@ const Navbar = () => {
 
   const scrollTo = (id) => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+    setOpenMenu(null);
   };
 
   return (
@@ -25,59 +27,173 @@ const Navbar = () => {
         </div>
         <div className="nav-links">
 
-          <div className="nav-item" onMouseEnter={() => setOpenMenu('features')} onMouseLeave={() => setOpenMenu(null)}>
-            <span className="nav-link-arrow">Features ▾</span>
+          {/* FEATURES MEGA MENU */}
+          <div
+            className="nav-item"
+            onMouseEnter={() => setOpenMenu('features')}
+            onMouseLeave={() => setOpenMenu(null)}
+            style={{ paddingBottom: openMenu === 'features' ? 20 : 0, marginBottom: openMenu === 'features' ? -20 : 0 }}
+          >
+            <span className={`nav-link-arrow ${openMenu === 'features' ? 'active' : ''}`}>
+              Features
+              <svg className="nav-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </span>
             {openMenu === 'features' && (
-              <div className="nav-dropdown">
-                <div className="dropdown-col">
-                  <div className="dropdown-heading">CORE FEATURES</div>
-                  <div className="dropdown-item">🎯 Find Projects</div>
-                  <div className="dropdown-item">🤖 AI Proposals</div>
-                  <div className="dropdown-item">✏️ Custom Prompts</div>
-                  <div className="dropdown-item">📄 Auto Contracts</div>
+              <div className="nav-dropdown mega-features">
+                <div className="mega-left">
+                  <div className="mega-section-label">CORE FEATURES</div>
+                  <div className="mega-item">
+                    <div className="mega-item-icon" style={{ background: 'linear-gradient(135deg,#dbeafe,#bfdbfe)' }}>🎯</div>
+                    <div className="mega-item-text">
+                      <div className="mega-item-title">Find Projects</div>
+                      <div className="mega-item-desc">Browse hundreds of curated freelance projects daily</div>
+                    </div>
+                  </div>
+                  <div className="mega-item">
+                    <div className="mega-item-icon" style={{ background: 'linear-gradient(135deg,#ede9fe,#ddd6fe)' }}>🤖</div>
+                    <div className="mega-item-text">
+                      <div className="mega-item-title">AI Proposals</div>
+                      <div className="mega-item-desc">Generate professional proposals in seconds with AI</div>
+                    </div>
+                  </div>
+                  <div className="mega-item">
+                    <div className="mega-item-icon" style={{ background: 'linear-gradient(135deg,#fef3c7,#fde68a)' }}>✏️</div>
+                    <div className="mega-item-text">
+                      <div className="mega-item-title">Custom Prompts</div>
+                      <div className="mega-item-desc">Tailor AI output to match your unique voice & style</div>
+                    </div>
+                  </div>
+                  <div className="mega-item">
+                    <div className="mega-item-icon" style={{ background: 'linear-gradient(135deg,#d1fae5,#a7f3d0)' }}>📄</div>
+                    <div className="mega-item-text">
+                      <div className="mega-item-title">Auto Contracts</div>
+                      <div className="mega-item-desc">Legally-sound contracts generated on deal close</div>
+                    </div>
+                  </div>
                 </div>
-                <div className="dropdown-col">
-                  <div className="dropdown-heading">COLLABORATION</div>
-                  <div className="dropdown-item">💬 Chat & Negotiate</div>
-                  <div className="dropdown-item">🔄 Real-time Revisions</div>
+                <div className="mega-divider" />
+                <div className="mega-right">
+                  <div className="mega-section-label">COLLABORATION</div>
+                  <div className="mega-item">
+                    <div className="mega-item-icon" style={{ background: 'linear-gradient(135deg,#fce7f3,#fbcfe8)' }}>💬</div>
+                    <div className="mega-item-text">
+                      <div className="mega-item-title">Chat & Negotiate</div>
+                      <div className="mega-item-desc">Real-time messaging with clients inside the platform</div>
+                    </div>
+                  </div>
+                  <div className="mega-item">
+                    <div className="mega-item-icon" style={{ background: 'linear-gradient(135deg,#e0f2fe,#bae6fd)' }}>🔄</div>
+                    <div className="mega-item-text">
+                      <div className="mega-item-title">Real-time Revisions</div>
+                      <div className="mega-item-desc">Revise & re-send proposals without leaving chat</div>
+                    </div>
+                  </div>
+                  <div className="mega-highlight-box">
+                    <div className="mega-highlight-label">✦ NEW</div>
+                    <div className="mega-highlight-title">AI Negotiation Assistant</div>
+                    <div className="mega-highlight-desc">Get real-time suggestions on how to respond during deal negotiation.</div>
+                    <div className="mega-highlight-cta">Learn more →</div>
+                  </div>
                 </div>
               </div>
             )}
           </div>
 
-          <div className="nav-item" onMouseEnter={() => setOpenMenu('projects')} onMouseLeave={() => setOpenMenu(null)}>
-            <span className="nav-link-arrow">Projects ▾</span>
+          {/* PROJECTS MEGA MENU */}
+          <div
+            className="nav-item"
+            onMouseEnter={() => setOpenMenu('projects')}
+            onMouseLeave={() => setOpenMenu(null)}
+            style={{ paddingBottom: openMenu === 'projects' ? 20 : 0, marginBottom: openMenu === 'projects' ? -20 : 0 }}
+          >
+            <span className={`nav-link-arrow ${openMenu === 'projects' ? 'active' : ''}`}>
+              Projects
+              <svg className="nav-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </span>
             {openMenu === 'projects' && (
-              <div className="nav-dropdown wide">
-                <div className="dropdown-col">
-                  <div className="dropdown-heading">CATEGORIES</div>
-                  <div className="dropdown-item">💻 Web Development</div>
-                  <div className="dropdown-item">🎨 UI/UX Design</div>
-                  <div className="dropdown-item">📱 Mobile App</div>
-                  <div className="dropdown-item">📢 Digital Marketing</div>
+              <div className="nav-dropdown mega-projects">
+                <div className="mega-left">
+                  <div className="mega-section-label">BROWSE BY CATEGORY</div>
+                  <div className="mega-cat-grid">
+                    <div className="mega-cat-item">
+                      <div className="mega-cat-icon-wrap" style={{background:'#dbeafe'}}>💻</div>
+                      <div className="mega-cat-info">
+                        <div className="mega-cat-label">Web Development</div>
+                        <div className="mega-cat-count">142 projects</div>
+                      </div>
+                    </div>
+                    <div className="mega-cat-item">
+                      <div className="mega-cat-icon-wrap" style={{background:'#ede9fe'}}>🎨</div>
+                      <div className="mega-cat-info">
+                        <div className="mega-cat-label">UI/UX Design</div>
+                        <div className="mega-cat-count">98 projects</div>
+                      </div>
+                    </div>
+                    <div className="mega-cat-item">
+                      <div className="mega-cat-icon-wrap" style={{background:'#d1fae5'}}>📱</div>
+                      <div className="mega-cat-info">
+                        <div className="mega-cat-label">Mobile App</div>
+                        <div className="mega-cat-count">76 projects</div>
+                      </div>
+                    </div>
+                    <div className="mega-cat-item">
+                      <div className="mega-cat-icon-wrap" style={{background:'#fef3c7'}}>📢</div>
+                      <div className="mega-cat-info">
+                        <div className="mega-cat-label">Digital Marketing</div>
+                        <div className="mega-cat-count">61 projects</div>
+                      </div>
+                    </div>
+                    <div className="mega-cat-item">
+                      <div className="mega-cat-icon-wrap" style={{background:'#fce7f3'}}>🤖</div>
+                      <div className="mega-cat-info">
+                        <div className="mega-cat-label">AI & ML</div>
+                        <div className="mega-cat-count">54 projects</div>
+                      </div>
+                    </div>
+                    <div className="mega-cat-item">
+                      <div className="mega-cat-icon-wrap" style={{background:'#e0f2fe'}}>📊</div>
+                      <div className="mega-cat-info">
+                        <div className="mega-cat-label">Data Analysis</div>
+                        <div className="mega-cat-count">39 projects</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="dropdown-col">
-                  <div className="dropdown-heading">LATEST PROJECTS</div>
-                  <div className="dropdown-card">
-                    <div className="dropdown-card-img">💻</div>
-                    <div>
-                      <div className="dropdown-card-title">E-Commerce Landing Page</div>
-                      <div className="dropdown-card-sub">Budget: Rp 3,000,000</div>
+                <div className="mega-divider" />
+                <div className="mega-right">
+                  <div className="mega-section-label">LATEST PROJECTS</div>
+                  <div className="mega-project-card">
+                    <div className="mega-project-icon" style={{ background: '#dbeafe' }}>💻</div>
+                    <div className="mega-project-info">
+                      <div className="mega-project-title">E-Commerce Landing Page</div>
+                      <div className="mega-project-meta">
+                        <span className="mega-project-budget">Rp 3,000,000</span>
+                        <span className="mega-project-badge">Open</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="dropdown-card">
-                    <div className="dropdown-card-img">🎨</div>
-                    <div>
-                      <div className="dropdown-card-title">Dashboard App Redesign</div>
-                      <div className="dropdown-card-sub">Budget: Rp 5,000,000</div>
+                  <div className="mega-project-card">
+                    <div className="mega-project-icon" style={{ background: '#ede9fe' }}>🎨</div>
+                    <div className="mega-project-info">
+                      <div className="mega-project-title">Dashboard App Redesign</div>
+                      <div className="mega-project-meta">
+                        <span className="mega-project-budget">Rp 5,000,000</span>
+                        <span className="mega-project-badge">Open</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="dropdown-card">
-                    <div className="dropdown-card-img">📱</div>
-                    <div>
-                      <div className="dropdown-card-title">Laundry Mobile App</div>
-                      <div className="dropdown-card-sub">Budget: Rp 8,000,000</div>
+                  <div className="mega-project-card">
+                    <div className="mega-project-icon" style={{ background: '#d1fae5' }}>📱</div>
+                    <div className="mega-project-info">
+                      <div className="mega-project-title">Laundry Mobile App</div>
+                      <div className="mega-project-meta">
+                        <span className="mega-project-budget">Rp 8,000,000</span>
+                        <span className="mega-project-badge">Open</span>
+                      </div>
                     </div>
+                  </div>
+                  <div className="mega-view-all" onClick={() => navigate("/projects")}>
+                    View all projects →
                   </div>
                 </div>
               </div>
@@ -96,6 +212,67 @@ const Navbar = () => {
   );
 };
 
+// ─── HERO ────────────────────────────────────────────────────
+const ProposalMockup = () => (
+  <div className="proposal-stack">
+    {/* Background card 3 */}
+    <div className="proposal-card pc-3">
+      <div className="pc-header">
+        <div className="pc-avatar" style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>RK</div>
+        <div className="pc-header-info">
+          <div className="pc-title">Fintech Brand Identity</div>
+          <div className="pc-subtitle">Budget: $500 · Due May 10</div>
+        </div>
+        <div className="pc-status pc-status-pending">Pending</div>
+      </div>
+    </div>
+
+    {/* Background card 2 */}
+    <div className="proposal-card pc-2">
+      <div className="pc-header">
+        <div className="pc-avatar" style={{ background: 'linear-gradient(135deg,#8b5cf6,#6d28d9)' }}>BS</div>
+        <div className="pc-header-info">
+          <div className="pc-title">Dashboard UI Redesign</div>
+          <div className="pc-subtitle">Budget: $330 · Due Apr 20</div>
+        </div>
+        <div className="pc-status pc-status-negotiating">Negotiating</div>
+      </div>
+    </div>
+
+    {/* Main front card */}
+    <div className="proposal-card pc-1">
+      <div className="pc-header">
+        <div className="pc-avatar" style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)' }}>AW</div>
+        <div className="pc-header-info">
+          <div className="pc-title">E-Commerce Fashion LP</div>
+          <div className="pc-subtitle">Budget: $200 · Due Apr 15</div>
+        </div>
+        <div className="pc-status pc-status-accepted">✓ Accepted</div>
+      </div>
+      <div className="pc-body">
+        <div className="pc-ai-tag">✦ AI-Generated Proposal</div>
+        <div className="pc-line pc-line-full" />
+        <div className="pc-line pc-line-full" />
+        <div className="pc-line pc-line-3q" />
+        <div className="pc-spacer" />
+        <div className="pc-line pc-line-full pc-line-blue" />
+        <div className="pc-line pc-line-half pc-line-blue" />
+      </div>
+      <div className="pc-footer">
+        <div className="pc-bid">
+          <span className="pc-bid-label">Your Bid</span>
+          <span className="pc-bid-value">$200</span>
+        </div>
+        <div className="pc-timeline">
+          <span className="pc-bid-label">Timeline</span>
+          <span className="pc-bid-value">14 days</span>
+        </div>
+        <div className="pc-send-btn">Send Proposal →</div>
+      </div>
+    </div>
+  </div>
+);
+
 const Hero = () => {
   const navigate = useNavigate();
   const [visible, setVisible] = useState(false);
@@ -109,12 +286,11 @@ const Hero = () => {
       <div className="hero-bg">
         <div className="hero-orb orb1" />
         <div className="hero-orb orb2" />
-  
         <div className="hero-diagonal-fix" />
       </div>
 
       <div className="hero-wrapper">
-   
+        {/* LEFT */}
         <div className={`hero-left ${visible ? "visible" : ""}`}>
           <div className="hero-badge">✦ Freelancer Proposal Platform #1</div>
           <h1 className="hero-title">
@@ -155,64 +331,64 @@ const Hero = () => {
           </div>
         </div>
 
-        {/* RIGHT */}
+        {/* RIGHT — Proposal stack illustration */}
         <div className={`hero-right ${visible ? "visible" : ""}`}>
-          <div className="mock-card main-card">
-            <div className="mock-header">
-              <div className="mock-dot red" />
-              <div className="mock-dot yellow" />
-              <div className="mock-dot green" />
-              <span className="mock-title">Proposal — Web Development Project</span>
-            </div>
-            <div className="mock-body">
-              <div className="mock-line long" />
-              <div className="mock-line medium" />
-              <div className="mock-line short" />
-              <div className="mock-spacer" />
-              <div className="mock-line medium" />
-              <div className="mock-line long" />
-              <div className="mock-line short" />
-              <div className="mock-spacer" />
-              <div className="mock-ai-badge">✦ AI Generated</div>
-              <div className="mock-line medium ai" />
-              <div className="mock-line long ai" />
-            </div>
-            <div className="mock-footer">
-              <button className="mock-btn">Send to Client →</button>
-            </div>
-          </div>
-          <div className="mock-card side-card">
-            <div className="side-card-icon">💬</div>
-            <div className="side-card-text">
-              <div className="mock-line short" />
-              <div className="mock-line medium" />
-            </div>
-          </div>
-          <div className="mock-card side-card2">
-            <div className="side-card-icon">✅</div>
-            <div className="side-card-text">
-              <span className="deal-text">Deal Closed!</span>
-            </div>
-          </div>
+          <ProposalMockup />
         </div>
       </div>
     </section>
   );
 };
 
+// ─── FEATURES ────────────────────────────────────────────────
 const features = [
-  { icon: "🎯", title: "Find the Right Project", desc: "Browse hundreds of projects posted by clients. Filter by category, budget, and deadline. Apply instantly with one click." },
-  { icon: "🤖", title: "Automatic AI Proposals", desc: "After selecting a project, our AI instantly prepares a tailored proposal matching the client's needs. Just review and send." },
-  { icon: "✏️", title: "Customize with Prompts", desc: "Not happy with the draft? Use prompts to revise tone, technical details, or pricing. The AI understands your project context." },
-  { icon: "💬", title: "Negotiate Directly in Chat", desc: "After the proposal is sent, a chat room opens automatically. Discuss, revise, and negotiate without leaving the platform." },
-  { icon: "🔄", title: "Real-time Proposal Revisions", desc: "Client requested changes? Re-prompt your AI for instant revisions. Send the updated version directly from chat — effortless." },
-  { icon: "📄", title: "Auto Contract on Deal Close", desc: "Once agreed, the system automatically generates a professional, legally-sound work contract. Digital signature, done." },
+  {
+    icon: "🎯",
+    title: "Find Projects",
+    desc: "Browse hundreds of curated freelance projects. Filter by category, budget, and deadline to find your perfect match.",
+    accent: "#dbeafe",
+    accentDark: "#2563eb",
+  },
+  {
+    icon: "🤖",
+    title: "AI-Powered Proposals",
+    desc: "Generate professional, tailored proposals in seconds. The AI understands your project context and writes in your voice.",
+    accent: "#ede9fe",
+    accentDark: "#7c3aed",
+  },
+  {
+    icon: "✏️",
+    title: "Custom Prompts",
+    desc: "Fine-tune your AI proposals with custom instructions. Make every proposal uniquely yours — down to the tone.",
+    accent: "#fef3c7",
+    accentDark: "#d97706",
+  },
+  {
+    icon: "💬",
+    title: "Negotiate in Chat",
+    desc: "After the proposal is sent, a chat room opens automatically. Discuss, revise, and close deals without leaving the platform.",
+    accent: "#d1fae5",
+    accentDark: "#059669",
+  },
+  {
+    icon: "🔄",
+    title: "Real-time Revisions",
+    desc: "Client requested changes? Re-prompt your AI for instant revisions and send the updated version directly from chat.",
+    accent: "#fce7f3",
+    accentDark: "#db2777",
+  },
+  {
+    icon: "📄",
+    title: "Auto Contracts",
+    desc: "Once agreed, the system generates a professional, legally-sound work contract automatically. Digital signature included.",
+    accent: "#e0f2fe",
+    accentDark: "#0284c7",
+  },
 ];
 
 const Features = () => {
   const ref = useRef(null);
   const [visible, setVisible] = useState(false);
-  const [hoveredIndex, setHoveredIndex] = useState(null);
 
   useEffect(() => {
     const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVisible(true); }, { threshold: 0.1 });
@@ -226,48 +402,83 @@ const Features = () => {
         <div className={`section-header ${visible ? "visible" : ""}`}>
           <div className="section-badge">Features</div>
           <h2 className="section-title">Everything You Need<br />to Win Projects</h2>
-          <p className="section-sub">From browsing projects to closing deals — everything is in Proposalin.</p>
+          <p className="section-sub">From browsing projects to closing deals — everything is in ScopeSync.</p>
         </div>
         <div className={`features-grid ${visible ? "visible" : ""}`}>
-          {features.map((f, i) => (
-            <div
-              className={`feature-card ${hoveredIndex === i ? "feature-card-active" : ""}`}
-              key={i}
-              style={{ animationDelay: `${i * 0.1}s` }}
-              onMouseEnter={() => setHoveredIndex(i)}
-              onMouseLeave={() => setHoveredIndex(null)}
-            >
-    
-              <div className="feature-card-glow" />
-              <div className="feature-icon-wrap">
-                <span className="feature-icon">{f.icon}</span>
-            
-                <div className="feature-icon-ring" />
+          {/* Row 1: big card left + 2 small stacked right */}
+          <div className="feature-card feature-card--large" style={{ animationDelay: '0s' }}>
+            <div className="fc-icon-wrap fc-blue"><span>🎯</span></div>
+            <h3 className="fc-title">Find the Right Projects</h3>
+            <p className="fc-desc">Browse hundreds of curated freelance projects every day. Filter by category, budget, deadline, and skill — and land the projects that truly match your expertise.</p>
+            <div className="fc-illustration fc-illus-projects">
+              <div className="fc-illus-row">
+                <div className="fc-illus-tag" style={{background:'#dbeafe',color:'#1d4ed8'}}>💻 Web Dev</div>
+                <div className="fc-illus-tag" style={{background:'#ede9fe',color:'#6d28d9'}}>🎨 UI/UX</div>
+                <div className="fc-illus-tag" style={{background:'#d1fae5',color:'#065f46'}}>📱 Mobile</div>
               </div>
-              <h3 className="feature-title">{f.title}</h3>
-              <p className="feature-desc">{f.desc}</p>
-            
-              <div className="feature-accent-bar" />
+              <div className="fc-illus-row">
+                <div className="fc-illus-tag" style={{background:'#fef3c7',color:'#92400e'}}>📢 Marketing</div>
+                <div className="fc-illus-tag" style={{background:'#fce7f3',color:'#9d174d'}}>🤖 AI & ML</div>
+              </div>
             </div>
-          ))}
-        </div>
-   
-        <div className="features-particles">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className={`particle particle-${i + 1}`} />
-          ))}
+          </div>
+
+          <div className="feature-card feature-card--small" style={{ animationDelay: '0.1s' }}>
+            <div className="fc-icon-wrap fc-purple"><span>🤖</span></div>
+            <h3 className="fc-title">AI-Powered Proposals</h3>
+            <p className="fc-desc">Generate a professional, tailored proposal in seconds. The AI reads the job brief and writes in your voice.</p>
+          </div>
+
+          <div className="feature-card feature-card--small" style={{ animationDelay: '0.2s' }}>
+            <div className="fc-icon-wrap fc-amber"><span>✏️</span></div>
+            <h3 className="fc-title">Custom Prompts</h3>
+            <p className="fc-desc">Fine-tune every AI output with your own instructions. Make proposals uniquely yours — down to tone and style.</p>
+          </div>
+
+          {/* Row 2: 2 small left + big card right */}
+          <div className="feature-card feature-card--small" style={{ animationDelay: '0.3s' }}>
+            <div className="fc-icon-wrap fc-green"><span>💬</span></div>
+            <h3 className="fc-title">Negotiate in Chat</h3>
+            <p className="fc-desc">A real-time chat room opens the moment your proposal is sent. Discuss terms and close deals without leaving the app.</p>
+          </div>
+
+          <div className="feature-card feature-card--small" style={{ animationDelay: '0.4s' }}>
+            <div className="fc-icon-wrap fc-pink"><span>🔄</span></div>
+            <h3 className="fc-title">Real-time Revisions</h3>
+            <p className="fc-desc">Client wants changes? Re-prompt your AI and send a revised proposal instantly — directly from the chat window.</p>
+          </div>
+
+          <div className="feature-card feature-card--large" style={{ animationDelay: '0.5s' }}>
+            <div className="fc-icon-wrap fc-sky"><span>📄</span></div>
+            <h3 className="fc-title">Auto Contracts on Deal Close</h3>
+            <p className="fc-desc">The moment both sides agree, ScopeSync auto-generates a professional, legally-sound work contract — ready for digital signature in one click.</p>
+            <div className="fc-illustration fc-illus-contract">
+              <div className="fc-contract-mock">
+                <div className="fc-contract-line fc-contract-title-line" />
+                <div className="fc-contract-line" style={{width:'88%'}} />
+                <div className="fc-contract-line" style={{width:'72%'}} />
+                <div className="fc-contract-line" style={{width:'80%'}} />
+                <div className="fc-contract-sigs">
+                  <div className="fc-sig"><div className="fc-sig-line" /><div className="fc-sig-label">Freelancer</div></div>
+                  <div className="fc-sig"><div className="fc-sig-line" /><div className="fc-sig-label">Client</div></div>
+                </div>
+                <div className="fc-contract-stamp">✓ Signed</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
   );
 };
 
+// ─── HOW IT WORKS ─────────────────────────────────────────────
 const steps = [
   { num: "01", title: "Sign Up & Create Profile", desc: "Create a freelancer or client account in 2 minutes. Complete your profile and add your skills." },
   { num: "02", title: "Browse & Choose Projects", desc: "Clients post projects, freelancers browse and select projects matching their expertise." },
-  { num: "03", title: "AI Generates Proposal", desc: "Click a project → AI instantly generates a professional proposal tailored to the client's brief." },
-  { num: "04", title: "Send & Negotiate", desc: "Send the proposal to the client, chat opens automatically. Discuss and negotiate until deal." },
-  { num: "05", title: "Deal & Contract", desc: "Agreed? A work contract is auto-generated. Digital signature and start working!" },
+  { num: "03", title: "Generate AI Proposal", desc: "Input your key points and let AI craft a polished, persuasive proposal instantly." },
+  { num: "04", title: "Negotiate in Real-time", desc: "Chat directly with the client, share revisions, and finalize terms without leaving the app." },
+  { num: "05", title: "Close Deal & Get Contract", desc: "Agree on terms and the system auto-generates a signed contract. Start working right away." },
 ];
 
 const HowItWorks = () => {
@@ -302,6 +513,7 @@ const HowItWorks = () => {
   );
 };
 
+// ─── PRICING ─────────────────────────────────────────────────
 const plans = [
   { name: "Starter", price: "Free", period: "", desc: "For freelancers just getting started", features: ["5 proposals / month", "Basic templates", "Client chat", "1 active contract"], cta: "Get Started Free", highlight: false },
   { name: "Pro", price: "Rp 149k", period: "/ month", desc: "For professional freelancers", features: ["Unlimited proposals", "All premium templates", "Unlimited AI prompts", "Unlimited contracts", "Priority support"], cta: "Try 14 Days Free", highlight: true },
@@ -336,7 +548,9 @@ const Pricing = () => {
               <ul className="plan-features">
                 {p.features.map((f, j) => <li key={j}><span className="check">✓</span>{f}</li>)}
               </ul>
-              <button className={`btn-plan ${p.highlight ? "btn-plan-primary" : "btn-plan-outline"}`} onClick={() => navigate("/signup")}>{p.cta}</button>
+              <button className={`btn-plan ${p.highlight ? "btn-plan-primary" : "btn-plan-outline"}`} onClick={() => navigate("/signup")}>
+                {p.cta}
+              </button>
             </div>
           ))}
         </div>
@@ -345,17 +559,39 @@ const Pricing = () => {
   );
 };
 
+// ─── TESTIMONIALS (MARQUEE) ───────────────────────────────────
 const testimonials = [
-  { name: "Rizky Pratama", role: "UI/UX Freelancer", text: "Writing a proposal used to take 3 hours. Now it's done in 10 minutes and I close the deal. Proposalin is a real game changer for freelancers.", avatar: "RP" },
-  { name: "Sari Dewi", role: "Web Developer", text: "The AI really understands the project context. The proposal draft is professional — just a few edits and send. Clients are always impressed!", avatar: "SD" },
-  { name: "Budi Santoso", role: "Digital Marketer", text: "Having chat + proposal revision in one place is incredible. Negotiations are faster and clients have much more trust in the process.", avatar: "BS" },
-  { name: "Andini Putri", role: "Content Creator", text: "As a client, I love it. Incoming proposals are far more relevant and well-structured. It's so much easier to find the right freelancer.", avatar: "AP" },
+  { text: "ScopeSync completely changed how I land clients. My acceptance rate went from 30% to over 80% in just 2 months.", name: "Rizky Pratama", role: "Fullstack Developer", avatar: "RP", color: "#dbeafe" },
+  { text: "The AI proposal generator is insane. It writes better than I do and sounds exactly like me. My clients love it.", name: "Sari Dewi", role: "UI/UX Designer", avatar: "SD", color: "#ede9fe" },
+  { text: "I used to spend hours on proposals. Now it takes 5 minutes. The negotiation chat is a game changer too.", name: "Ahmad Fauzi", role: "Digital Marketer", avatar: "AF", color: "#d1fae5" },
+  { text: "Best investment for my freelance business. Got 3 clients in the first week after switching from my old workflow.", name: "Maya Indah", role: "Content Strategist", avatar: "MI", color: "#fce7f3" },
+  { text: "The auto-contract feature alone is worth the subscription. No more back-and-forth on terms over email.", name: "Dimas Saputra", role: "Mobile Developer", avatar: "DS", color: "#fef3c7" },
+  { text: "I was skeptical about AI proposals but the quality blew me away. It nailed my tone perfectly on the first try.", name: "Nadia Putri", role: "Graphic Designer", avatar: "NP", color: "#e0f2fe" },
+  { text: "As an agency, having 10 team members on one plan is perfect. The analytics dashboard helps me track everything.", name: "Hendra Wijaya", role: "Agency Owner", avatar: "HW", color: "#fce7f3" },
+  { text: "ScopeSync gave me the confidence to pitch bigger clients. The professional proposals make me look like a top-tier freelancer.", name: "Fitri Handayani", role: "SEO Specialist", avatar: "FH", color: "#d1fae5" },
 ];
+
+const TestiCard = ({ t }) => (
+  <div className="testi-card-marquee">
+    <div className="testi-quote">"</div>
+    <div className="testi-stars">★★★★★</div>
+    <p className="testi-text">"{t.text}"</p>
+    <div className="testi-author">
+      <div className="testi-avatar" style={{ background: t.color }}>
+        <span style={{ color: '#1e40af', fontWeight: 700, fontSize: 13 }}>{t.avatar}</span>
+      </div>
+      <div>
+        <div className="testi-name">{t.name}</div>
+        <div className="testi-role">{t.role}</div>
+      </div>
+    </div>
+  </div>
+);
 
 const Testimonials = () => {
   const ref = useRef(null);
   const [visible, setVisible] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(null);
+  const [paused, setPaused] = useState(false);
 
   useEffect(() => {
     const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVisible(true); }, { threshold: 0.1 });
@@ -363,50 +599,42 @@ const Testimonials = () => {
     return () => obs.disconnect();
   }, []);
 
+  const row1 = testimonials.slice(0, 4);
+  const row2 = testimonials.slice(4, 8);
+
   return (
     <section className="testimonials" id="testimonials" ref={ref}>
-      <div className="section-inner">
-        <div className={`section-header ${visible ? "visible" : ""}`}>
-          <div className="section-badge">Testimonials</div>
-          <h2 className="section-title">What Our Users<br />Are Saying</h2>
+      <div className={`section-header ${visible ? "visible" : ""}`} style={{ maxWidth: 1100, margin: '0 auto 48px', padding: '0 32px' }}>
+        <div className="section-badge">Testimonials</div>
+        <h2 className="section-title">What Our Users<br />Are Saying</h2>
+      </div>
+
+      <div
+        className={`marquee-wrap ${visible ? "visible" : ""}`}
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
+      >
+        {/* Row 1 — left to right */}
+        <div className={`marquee-track marquee-track-1 ${paused ? "paused" : ""}`}>
+          {[...row1, ...row1].map((t, i) => <TestiCard key={i} t={t} />)}
         </div>
-        <div className={`testi-grid ${visible ? "visible" : ""}`}>
-          {testimonials.map((t, i) => (
-            <div
-              className={`testi-card testi-card-animated ${activeIndex === i ? "testi-card-lifted" : ""}`}
-              key={i}
-              style={{ animationDelay: `${i * 0.1}s` }}
-              onMouseEnter={() => setActiveIndex(i)}
-              onMouseLeave={() => setActiveIndex(null)}
-            >
-        
-              <div className="testi-quote-mark">"</div>
-              <div className="testi-stars">★★★★★</div>
-              <p className="testi-text">"{t.text}"</p>
-              <div className="testi-author">
-                <div className="testi-avatar testi-avatar-animated">{t.avatar}</div>
-                <div>
-                  <div className="testi-name">{t.name}</div>
-                  <div className="testi-role">{t.role}</div>
-                </div>
-              </div>
-              <div className="testi-shimmer" />
-            </div>
-          ))}
+        {/* Row 2 — right to left */}
+        <div className={`marquee-track marquee-track-2 ${paused ? "paused" : ""}`}>
+          {[...row2, ...row2].map((t, i) => <TestiCard key={i} t={t} />)}
         </div>
       </div>
     </section>
   );
 };
 
-
+// ─── FOOTER ───────────────────────────────────────────────────
 const Footer = () => {
   const navigate = useNavigate();
   return (
     <footer className="footer">
       <div className="footer-inner">
         <div className="footer-brand">
-          <div className="footer-logo">Proposal<span className="nav-accent">in</span></div>
+          <div className="footer-logo">Scope<span className="nav-accent">Sync</span></div>
           <p className="footer-tagline">Indonesia's best freelancer proposal platform. From project to deal, faster.</p>
         </div>
         <div className="footer-cols">
@@ -429,7 +657,7 @@ const Footer = () => {
         </div>
       </div>
       <div className="footer-bottom">
-        <span>© 2025 Proposalin. All rights reserved.</span>
+        <span>© 2025 ScopeSync. All rights reserved.</span>
         <div className="footer-bottom-links">
           <span onClick={() => navigate("/login")}>Log In</span>
           <span onClick={() => navigate("/signup")}>Sign Up Free</span>

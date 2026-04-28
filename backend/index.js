@@ -9,6 +9,7 @@ const projectRoutes = require('./routes/projects');
 const proposalRoutes = require('./routes/proposals');
 const negotiationRoutes = require('./routes/negotiations.js');
 const deliveryRoutes = require('./routes/deliveries');
+const scopeChangeRoutes = require('./routes/scopeChanges');
 
 const app = express();
 app.use(cors());
@@ -22,6 +23,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/proposals', proposalRoutes);
 app.use('/api/negotiations', negotiationRoutes);
 app.use('/api/deliveries', deliveryRoutes);
+app.use('/api/scope-changes', scopeChangeRoutes);
 
 app.get('/', (req, res) => res.json({ message: 'Backend running!' }));
 
