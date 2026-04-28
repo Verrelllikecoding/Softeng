@@ -1080,3 +1080,105 @@
   color: #94a3b8;
   margin-left: 4px;
 }
+
+/* ── ROLE INDICATOR ── */
+.neg-role-indicator {
+  font-size: 11px;
+  font-weight: 500;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-left: 8px;
+}
+
+/* ── DIGITAL SIGNATURE ── */
+.neg-sig-section {
+  margin: 1rem 0;
+}
+
+.neg-sig-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 6px;
+}
+
+.neg-sig-hint {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 1rem;
+}
+
+.neg-sig-row {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.neg-sig-wrap {
+  flex: 1;
+  min-width: 220px;
+}
+
+.neg-sig-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.neg-sig-canvas {
+  display: block;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fafafa;
+  cursor: crosshair;
+  touch-action: none;
+  width: 100%;
+  max-width: 280px;
+}
+
+.neg-sig-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.neg-sig-clear {
+  font-size: 12px;
+  color: #64748b;
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.neg-sig-clear:hover { background: #f1f5f9; }
+
+.neg-sig-done {
+  font-size: 12px;
+  color: #15803d;
+  font-weight: 600;
+}
+
+.neg-sig-both-done {
+  font-size: 13px;
+  color: #15803d;
+  font-weight: 500;
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-top: 1rem;
+}
+
+/* ── DOWNLOAD BUTTON DISABLED ── */
+.neg-dl-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

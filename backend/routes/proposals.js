@@ -7,7 +7,7 @@ const authMiddleware = require('../middleware/authMiddleware');
 router.get('/my', authMiddleware, async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT pr.*, p.title as project_title, p.budget, p.status as project_status
+      SELECT pr.*, p.title as project_title, p.budget, p.status as project_status, p.client_id
       FROM proposals pr
       LEFT JOIN projects p ON pr.project_id = p.id
       WHERE pr.freelancer_id = $1
@@ -21,7 +21,39 @@ router.get('/my', authMiddleware, async (req, res) => {
   }
 });
 
-// GET semua proposals untuk 1 project (hanya client pemilik project)
+// GET semua projects milik client beserta proposals
+router.get('/client/my-projects', authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT p.*, 
+        COUNT(pr.id) as proposal_count,
+        json_agg(
+          json_build_object(
+            'id', pr.id,
+            'content', pr.content,
+            'status', pr.status,
+            'created_at', pr.created_at,
+            'freelancer_name', u.name,
+            'freelancer_rating', u.rating,
+            'freelancer_id', pr.freelancer_id
+          )
+        ) FILTER (WHERE pr.id IS NOT NULL) as proposals
+      FROM projects p
+      LEFT JOIN proposals pr ON pr.project_id = p.id
+      LEFT JOIN users u ON pr.freelancer_id = u.id
+      WHERE p.client_id = $1
+      GROUP BY p.id
+      ORDER BY p.posted_at DESC
+    `, [req.user.id]);
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// GET semua proposals untuk 1 project
 router.get('/project/:project_id', authMiddleware, async (req, res) => {
   try {
     const result = await pool.query(`
@@ -39,12 +71,24 @@ router.get('/project/:project_id', authMiddleware, async (req, res) => {
   }
 });
 
-// CREATE proposal (harus login sebagai freelancer)
+// CREATE proposal
 router.post('/', authMiddleware, async (req, res) => {
   const { project_id, content } = req.body;
 
   try {
-    // Cek sudah pernah submit proposal ke project ini belum
+    // ── Cek apakah user adalah pemilik project ──
+    const projectCheck = await pool.query(
+      'SELECT client_id FROM projects WHERE id = $1',
+      [project_id]
+    );
+    if (projectCheck.rows.length === 0) {
+      return res.status(404).json({ message: 'Project tidak ditemukan' });
+    }
+    if (projectCheck.rows[0].client_id === req.user.id) {
+      return res.status(403).json({ message: 'Kamu tidak bisa submit proposal ke project milikmu sendiri' });
+    }
+
+    // ── Cek sudah pernah submit belum ──
     const existing = await pool.query(
       'SELECT * FROM proposals WHERE project_id = $1 AND freelancer_id = $2',
       [project_id, req.user.id]
@@ -59,7 +103,7 @@ router.post('/', authMiddleware, async (req, res) => {
       RETURNING *
     `, [project_id, req.user.id, content]);
 
-    // Update proposals_count di table projects
+    // Update proposals_count
     await pool.query(
       'UPDATE projects SET proposals_count = proposals_count + 1 WHERE id = $1',
       [project_id]
@@ -72,9 +116,9 @@ router.post('/', authMiddleware, async (req, res) => {
   }
 });
 
-// UPDATE status proposal (hanya client pemilik project)
+// UPDATE status proposal
 router.put('/:id/status', authMiddleware, async (req, res) => {
-  const { status } = req.body; // 'Accepted' atau 'Rejected'
+  const { status } = req.body;
 
   try {
     const result = await pool.query(
@@ -93,7 +137,7 @@ router.put('/:id/status', authMiddleware, async (req, res) => {
   }
 });
 
-// DELETE proposal (hanya freelancer pemilik proposal)
+// DELETE proposal
 router.delete('/:id', authMiddleware, async (req, res) => {
   try {
     const check = await pool.query('SELECT * FROM proposals WHERE id = $1', [req.params.id]);
@@ -106,7 +150,6 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 
     await pool.query('DELETE FROM proposals WHERE id = $1', [req.params.id]);
 
-    // Kurangi proposals_count di table projects
     await pool.query(
       'UPDATE projects SET proposals_count = proposals_count - 1 WHERE id = $1',
       [check.rows[0].project_id]

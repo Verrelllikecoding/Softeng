@@ -199,10 +199,6 @@ export default function LoginPage() {
 
             <p className="form-subtitle">
               Manage your freelance projects better.<br/>
-
-              ✓ Generate proposals instantly<br/>
-              ✓ Track project negotiations<br/>
-              ✓ Send professional invoices<br/>
             </p>
 
           </div>

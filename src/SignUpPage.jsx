@@ -179,11 +179,7 @@ const goToLogin = () => {
           <div className="form-header">
             <h1 className="form-title">Create your account 🚀</h1>
             <p className="form-subtitle">
-              Generate proposals, manage negotiations,
-and send invoices in one place.<br/>
-          ✓ Generate proposals instantly<br/>
-✓ Track client negotiations<br/>
-✓ Send professional invoices<br/>
+              Generate proposals, manage negotiations, and send invoices in one place.<br/>
             </p>
           </div>
 

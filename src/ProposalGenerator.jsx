@@ -248,7 +248,8 @@ Format with clear section headers using **Header Name** markdown. Keep it concis
           projectId: id,
         }));
         setSendStatus("sent");
-        setTimeout(() => navigate(`/projects/${id}/negotiate`), 1500);
+        // Seharusnya seperti ini (include proposal.id dari response API):
+        setTimeout(() => navigate(`/projects/${id}/negotiate/${data.proposal.id}`), 1500);
       } else {
         alert(data.message || "Gagal mengirim proposal");
       }
