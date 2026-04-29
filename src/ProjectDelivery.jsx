@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "./ProjectDelivery.css";
+import NotificationBell from "./NotificationBell";
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ const Navbar = () => {
           <span onClick={() => navigate("/")}>Pricing</span>
         </div>
         <div className="pnav-actions">
+          <NotificationBell />
           {user ? (
             <button className="btn-pnav-login" onClick={() => navigate("/dashboard")}>Dashboard</button>
           ) : (

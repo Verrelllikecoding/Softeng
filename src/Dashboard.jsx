@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Dashboard.css";
+import NotificationBell from "./NotificationBell";
 
 const statusConfig = {
   Pending:   { label: "Pending",   cls: "pending",   icon: "⏳" },
@@ -34,6 +35,7 @@ const Navbar = ({ user, onLogout }) => {
           <span onClick={() => navigate("/")}>Pricing</span>
         </div>
         <div className="pnav-actions dash-nav-actions">
+          <NotificationBell />
           <div className="dash-nav-avatar" title={user?.name}>{initials}</div>
           <button className="btn-pnav-login" onClick={onLogout}>Log Out</button>
         </div>

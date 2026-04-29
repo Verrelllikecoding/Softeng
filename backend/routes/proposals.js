@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 const authMiddleware = require('../middleware/authMiddleware');
+const notify = require('../utils/notify');
 
 // GET semua proposals milik freelancer yang login
 router.get('/my', authMiddleware, async (req, res) => {
@@ -13,7 +14,6 @@ router.get('/my', authMiddleware, async (req, res) => {
       WHERE pr.freelancer_id = $1
       ORDER BY pr.created_at DESC
     `, [req.user.id]);
-
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -45,7 +45,6 @@ router.get('/client/my-projects', authMiddleware, async (req, res) => {
       GROUP BY p.id
       ORDER BY p.posted_at DESC
     `, [req.user.id]);
-
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -63,7 +62,6 @@ router.get('/project/:project_id', authMiddleware, async (req, res) => {
       WHERE pr.project_id = $1
       ORDER BY pr.created_at DESC
     `, [req.params.project_id]);
-
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -74,11 +72,9 @@ router.get('/project/:project_id', authMiddleware, async (req, res) => {
 // CREATE proposal
 router.post('/', authMiddleware, async (req, res) => {
   const { project_id, content } = req.body;
-
   try {
-    // ── Cek apakah user adalah pemilik project ──
     const projectCheck = await pool.query(
-      'SELECT client_id FROM projects WHERE id = $1',
+      'SELECT client_id, title FROM projects WHERE id = $1',
       [project_id]
     );
     if (projectCheck.rows.length === 0) {
@@ -88,7 +84,6 @@ router.post('/', authMiddleware, async (req, res) => {
       return res.status(403).json({ message: 'Kamu tidak bisa submit proposal ke project milikmu sendiri' });
     }
 
-    // ── Cek sudah pernah submit belum ──
     const existing = await pool.query(
       'SELECT * FROM proposals WHERE project_id = $1 AND freelancer_id = $2',
       [project_id, req.user.id]
@@ -99,14 +94,25 @@ router.post('/', authMiddleware, async (req, res) => {
 
     const result = await pool.query(`
       INSERT INTO proposals (project_id, freelancer_id, content)
-      VALUES ($1, $2, $3)
-      RETURNING *
+      VALUES ($1, $2, $3) RETURNING *
     `, [project_id, req.user.id, content]);
 
-    // Update proposals_count
     await pool.query(
       'UPDATE projects SET proposals_count = proposals_count + 1 WHERE id = $1',
       [project_id]
+    );
+
+    // ── Notifikasi ke client ──
+    const { client_id, title } = projectCheck.rows[0];
+    const freelancerRes = await pool.query('SELECT name FROM users WHERE id = $1', [req.user.id]);
+    const freelancerName = freelancerRes.rows[0]?.name || 'A freelancer';
+
+    await notify(
+      client_id,
+      'new_proposal',
+      'New Proposal Received 📋',
+      `${freelancerName} submitted a proposal for "${title}"`,
+      `/dashboard`
     );
 
     res.status(201).json({ message: 'Proposal berhasil dikirim', proposal: result.rows[0] });
@@ -119,15 +125,36 @@ router.post('/', authMiddleware, async (req, res) => {
 // UPDATE status proposal
 router.put('/:id/status', authMiddleware, async (req, res) => {
   const { status } = req.body;
-
   try {
     const result = await pool.query(
       'UPDATE proposals SET status = $1 WHERE id = $2 RETURNING *',
       [status, req.params.id]
     );
-
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Proposal tidak ditemukan' });
+    }
+
+    // ── Notifikasi ke freelancer ──
+    const proposal = result.rows[0];
+    const projRes = await pool.query('SELECT title FROM projects WHERE id = $1', [proposal.project_id]);
+    const projectTitle = projRes.rows[0]?.title || 'your project';
+
+    if (status === 'Accepted') {
+      await notify(
+        proposal.freelancer_id,
+        'proposal_accepted',
+        'Proposal Accepted! 🎉',
+        `Your proposal for "${projectTitle}" has been accepted!`,
+        `/delivery/${proposal.id}`
+      );
+    } else if (status === 'Rejected') {
+      await notify(
+        proposal.freelancer_id,
+        'proposal_rejected',
+        'Proposal Rejected',
+        `Your proposal for "${projectTitle}" was not selected this time.`,
+        `/dashboard`
+      );
     }
 
     res.json({ message: 'Status proposal diupdate', proposal: result.rows[0] });
@@ -147,14 +174,11 @@ router.delete('/:id', authMiddleware, async (req, res) => {
     if (check.rows[0].freelancer_id !== req.user.id) {
       return res.status(403).json({ message: 'Tidak punya akses' });
     }
-
     await pool.query('DELETE FROM proposals WHERE id = $1', [req.params.id]);
-
     await pool.query(
       'UPDATE projects SET proposals_count = proposals_count - 1 WHERE id = $1',
       [check.rows[0].project_id]
     );
-
     res.json({ message: 'Proposal berhasil dihapus' });
   } catch (err) {
     console.error(err);

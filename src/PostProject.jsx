@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./PostProject.css";
+import NotificationBell from "./NotificationBell";
 
 const CATEGORIES = {
   "Technology": ["Web Development", "Mobile Development", "Machine Learning", "Data Analysis"],
@@ -25,6 +26,7 @@ const Navbar = () => {
           <span onClick={() => navigate("/")}>Pricing</span>
         </div>
         <div className="pnav-actions">
+          <NotificationBell />
           {user ? (
             <button className="btn-pnav-login" onClick={() => navigate("/dashboard")}>Dashboard</button>
           ) : (

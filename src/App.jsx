@@ -9,6 +9,7 @@ import ProposalNegotiation from "./ProposalNegotiation";
 import Dashboard from "./Dashboard";
 import PostProject from "./PostProject";
 import ProjectDelivery from "./ProjectDelivery";
+import ScopeChangeNegotiation from "./ScopeChangeNegotiation";
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
         <Route path="/projects/:id/negotiate/:proposal_id" element={<ProposalNegotiation />} />
         <Route path="/post-project" element={<PostProject />} />
         <Route path="/delivery/:proposal_id" element={<ProjectDelivery />} />
+        <Route path="/scope-change/:id" element={<ScopeChangeNegotiation />} />
       </Routes>
     </BrowserRouter>
   );

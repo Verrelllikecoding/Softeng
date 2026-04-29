@@ -1,0 +1,208 @@
+/* ── BELL BUTTON ── */
+.notif-bell-wrap {
+  position: relative;
+}
+
+.notif-bell-btn {
+  position: relative;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+.notif-bell-btn:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+/* ── BADGE ── */
+.notif-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: #ef4444;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid white;
+  line-height: 1;
+  animation: notif-pulse 2s infinite;
+}
+
+@keyframes notif-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* ── DROPDOWN ── */
+.notif-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 360px;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+  z-index: 1000;
+  overflow: hidden;
+  animation: notif-slide-down 0.15s ease;
+}
+
+@keyframes notif-slide-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── DROPDOWN HEADER ── */
+.notif-dropdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.notif-dropdown-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.notif-mark-all-btn {
+  font-size: 12px;
+  color: #1d4ed8;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.notif-mark-all-btn:hover { color: #1e40af; text-decoration: underline; }
+
+/* ── DROPDOWN BODY ── */
+.notif-dropdown-body {
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.notif-dropdown-body::-webkit-scrollbar { width: 4px; }
+.notif-dropdown-body::-webkit-scrollbar-track { background: transparent; }
+.notif-dropdown-body::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
+
+/* ── LOADING ── */
+.notif-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 2rem;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.notif-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e2e8f0;
+  border-top-color: #1d4ed8;
+  border-radius: 50%;
+  animation: notif-spin 0.7s linear infinite;
+  display: inline-block;
+}
+@keyframes notif-spin { to { transform: rotate(360deg); } }
+
+/* ── EMPTY ── */
+.notif-empty {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: #94a3b8;
+}
+.notif-empty p {
+  font-size: 13px;
+  margin: 8px 0 0;
+}
+
+/* ── NOTIFICATION ITEM ── */
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-bottom: 1px solid #f8fafc;
+  position: relative;
+}
+.notif-item:hover { background: #f8fafc; }
+.notif-item--unread { background: #fffbeb; }
+.notif-item--unread:hover { background: #fef9c3; }
+
+.notif-item-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.notif-item-body { flex: 1; min-width: 0; }
+
+.notif-item-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 3px;
+  line-height: 1.3;
+}
+
+.notif-item-msg {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0 0 4px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.notif-item-time {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.notif-unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1d4ed8;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+/* ── DROPDOWN FOOTER ── */
+.notif-dropdown-footer {
+  padding: 10px 16px;
+  border-top: 1px solid #f1f5f9;
+  text-align: center;
+  font-size: 12px;
+  color: #94a3b8;
+}

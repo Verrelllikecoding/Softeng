@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "./ProjectDetail.css";
+import NotificationBell from "./NotificationBell";
 
 const categoryColors = {
   "Technology":            { bg: "#e0f2fe", color: "#0369a1" },
@@ -25,6 +26,7 @@ const Navbar = () => {
           <span onClick={() => navigate("/")}>Pricing</span>
         </div>
         <div className="pnav-actions">
+          <NotificationBell />
           {user ? (
             <button className="btn-pnav-login" onClick={() => navigate("/dashboard")}>Dashboard</button>
           ) : (
