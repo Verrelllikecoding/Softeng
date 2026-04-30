@@ -640,3 +640,82 @@ body {
 .project-card:hover .card-thumb-img {
   transform: scale(1.05);
 }
+
+/* ── CLICKABLE CARD THUMB ── */
+.card-thumb--clickable {
+  transition: transform 0.2s ease;
+}
+.card-thumb--clickable:hover {
+  transform: scale(1.02);
+}
+
+.card-thumb-hover-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  backdrop-filter: blur(2px);
+}
+.card-thumb--clickable:hover .card-thumb-hover-hint {
+  opacity: 1;
+}
+
+/* ── CLICKABLE CARD TITLE ── */
+.card-title--link {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.card-title--link:hover {
+  color: #1a56db;
+}
+
+/* ── DASHBOARD STAT CARD CLICKABLE ── */
+.dash-stat-card--clickable {
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.15s, border-color 0.2s;
+  border: 1.5px solid transparent;
+}
+.dash-stat-card--clickable:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  transform: translateY(-2px);
+}
+.dash-stat-card--clickable.active-filter {
+  border-color: #1a56db;
+  background: #eff6ff;
+}
+.dash-stat-card--clickable.active-filter .dash-stat-val {
+  color: #1a56db;
+}
+
+/* ── FILTER INDICATOR ── */
+.dash-filter-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #1d4ed8;
+  margin-bottom: 1rem;
+}
+.dash-filter-indicator button {
+  background: none;
+  border: none;
+  color: #1d4ed8;
+  cursor: pointer;
+  font-size: 15px;
+  padding: 0;
+  line-height: 1;
+  margin-left: auto;
+}
+.dash-filter-indicator button:hover { color: #be123c; }

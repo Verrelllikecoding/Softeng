@@ -19,7 +19,6 @@ const categoryColors = {
   "Business & Consulting": { bg: "#fff7ed", color: "#c2410c" },
 };
 
-// Default gradient backgrounds per category (kalau tidak ada gambar)
 const categoryGradients = {
   "Technology": "linear-gradient(135deg, #1e3a5f 0%, #1a56db 100%)",
   "Design & Creative": "linear-gradient(135deg, #4a1d96 0%, #7c3aed 100%)",
@@ -191,14 +190,16 @@ export default function ProjectPage() {
                 return (
                   <div className="project-card" key={p.id}>
 
-                    {/* ── THUMBNAIL ── */}
+                    {/* ── THUMBNAIL — bisa diklik ke detail ── */}
                     <div
-                      className="card-thumb"
+                      className="card-thumb card-thumb--clickable"
                       style={{
                         background: imageUrl ? "none" : gradient,
                         position: "relative",
                         overflow: "hidden",
+                        cursor: "pointer",
                       }}
+                      onClick={() => navigate(`/projects/${p.id}`)}
                     >
                       {imageUrl && (
                         <img
@@ -206,23 +207,35 @@ export default function ProjectPage() {
                           alt={p.title}
                           className="card-thumb-img"
                           onError={e => {
-                            // Fallback ke gradient kalau gambar gagal load
                             e.target.style.display = "none";
                             e.target.parentElement.style.background = gradient;
                           }}
                         />
                       )}
                       <div className="card-thumb-overlay" />
+
+                      {/* Badge kategori */}
                       <span
                         className="card-cat-badge"
                         style={{ background: catColor.bg, color: catColor.color }}
                       >
                         {p.sub_category}
                       </span>
+
+                      {/* Hover hint */}
+                      <div className="card-thumb-hover-hint">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                        View Detail
+                      </div>
                     </div>
 
                     <div className="card-content">
-                      <h3 className="card-title">{p.title}</h3>
+                      <h3
+                        className="card-title card-title--link"
+                        onClick={() => navigate(`/projects/${p.id}`)}
+                      >
+                        {p.title}
+                      </h3>
                       <div className="card-title-sep" />
                       <p className="card-desc">{p.description}</p>
                       <div className="card-spacer" />

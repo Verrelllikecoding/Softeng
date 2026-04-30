@@ -11,12 +11,14 @@ const negotiationRoutes = require('./routes/negotiations');
 const deliveryRoutes = require('./routes/deliveries');
 const scopeChangeRoutes = require('./routes/scopeChanges');
 const notificationRoutes = require('./routes/notifications');
+const ratingRoutes = require('./routes/ratings');
+const signatureRoutes = require('./routes/signatures');
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // increase limit for signature base64
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-// Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/api/auth', authRoutes);
@@ -26,6 +28,8 @@ app.use('/api/negotiations', negotiationRoutes);
 app.use('/api/deliveries', deliveryRoutes);
 app.use('/api/scope-changes', scopeChangeRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/ratings', ratingRoutes);
+app.use('/api/signatures', signatureRoutes);
 
 app.get('/', (req, res) => res.json({ message: 'Backend running!' }));
 

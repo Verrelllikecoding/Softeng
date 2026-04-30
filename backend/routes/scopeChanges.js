@@ -5,7 +5,6 @@ const authMiddleware = require('../middleware/authMiddleware');
 const notify = require('../utils/notify');
 
 // ─── GET scope changes untuk freelancer ──────────────────────
-// PENTING: route /my/* harus di atas /:id supaya tidak bentrok
 router.get('/my/freelancer', authMiddleware, async (req, res) => {
   try {
     const result = await pool.query(`
@@ -100,6 +99,13 @@ router.post('/', authMiddleware, async (req, res) => {
 router.post('/:id/messages', authMiddleware, async (req, res) => {
   const { messages, status, final_budget, final_days } = req.body;
   try {
+    // ── Cek status sebelumnya untuk hindari double budget update ──
+    const prevResult = await pool.query(
+      'SELECT status FROM scope_changes WHERE id = $1',
+      [req.params.id]
+    );
+    const wasAlreadyAccepted = prevResult.rows[0]?.status === 'accepted';
+
     const result = await pool.query(`
       UPDATE scope_changes 
       SET messages = $1, status = $2, counter_budget = $3, counter_days = $4, updated_at = NOW()
@@ -116,7 +122,7 @@ router.post('/:id/messages', authMiddleware, async (req, res) => {
     const senderName = senderRes.rows[0]?.name || (isClient ? 'Client' : 'Freelancer');
     const senderRole = isClient ? 'Client' : 'Freelancer';
 
-    // Notifikasi setiap pesan baru
+    // ── Notifikasi setiap pesan baru ──
     if (status === 'pending') {
       await notify(
         recipientId,
@@ -127,8 +133,8 @@ router.post('/:id/messages', authMiddleware, async (req, res) => {
       );
     }
 
-    // Kalau accepted
-    if (status === 'accepted') {
+    // ── Kalau accepted — hanya update budget SEKALI ──
+    if (status === 'accepted' && !wasAlreadyAccepted) {
       const budgetAdd = final_budget || sc.additional_budget;
       const daysAdd = final_days || sc.additional_days;
 
@@ -138,7 +144,6 @@ router.post('/:id/messages', authMiddleware, async (req, res) => {
         WHERE id = $2
       `, [budgetAdd, sc.project_id]);
 
-      // Reset proposal status ke 'Accepted' supaya freelancer bisa submit delivery baru
       await pool.query(
         "UPDATE proposals SET status = 'Accepted' WHERE id = $1",
         [sc.proposal_id]
@@ -160,7 +165,7 @@ router.post('/:id/messages', authMiddleware, async (req, res) => {
       );
     }
 
-    // Kalau rejected
+    // ── Kalau rejected ──
     if (status === 'rejected') {
       await notify(
         sc.client_id,
@@ -189,6 +194,13 @@ router.post('/:id/messages', authMiddleware, async (req, res) => {
 router.put('/:id/respond', authMiddleware, async (req, res) => {
   const { status } = req.body;
   try {
+    // ── Cek status sebelumnya untuk hindari double budget update ──
+    const prevResult = await pool.query(
+      'SELECT status FROM scope_changes WHERE id = $1',
+      [req.params.id]
+    );
+    const wasAlreadyAccepted = prevResult.rows[0]?.status === 'accepted';
+
     const result = await pool.query(`
       UPDATE scope_changes SET status = $1, updated_at = NOW()
       WHERE id = $2 RETURNING *
@@ -198,14 +210,13 @@ router.put('/:id/respond', authMiddleware, async (req, res) => {
     const projRes = await pool.query('SELECT title FROM projects WHERE id = $1', [sc.project_id]);
     const title = projRes.rows[0]?.title || 'your project';
 
-    if (status === 'accepted') {
+    if (status === 'accepted' && !wasAlreadyAccepted) {
       await pool.query(`
         UPDATE projects 
         SET budget = CONCAT('$', (CAST(REGEXP_REPLACE(budget, '[^0-9]', '', 'g') AS INT) + $1)::TEXT)
         WHERE id = $2
       `, [sc.additional_budget, sc.project_id]);
 
-      // Reset proposal status ke 'Accepted'
       await pool.query(
         "UPDATE proposals SET status = 'Accepted' WHERE id = $1",
         [sc.proposal_id]
@@ -244,8 +255,7 @@ router.put('/:id/respond', authMiddleware, async (req, res) => {
   }
 });
 
-// ─── GET scope change by ID ───────────────────────────────────
-// PENTING: route /:id harus paling BAWAH
+// ─── GET scope change by ID — HARUS PALING BAWAH ─────────────
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
     const result = await pool.query(`

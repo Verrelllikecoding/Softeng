@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import NotificationBell from "./NotificationBell";
 import "./ScopeChangeNegotiation.css";
 
-
 // ─── NAVBAR ───────────────────────────────────────────────────
 const Navbar = () => {
   const navigate = useNavigate();
@@ -50,18 +49,42 @@ const SignatureCanvas = ({ label, onSave, onClear }) => {
 
   return (
     <div className="sc-sig-wrap">
-      <div className="sc-sig-label">{label}</div>
+      {label && <div className="sc-sig-label">{label}</div>}
       <canvas ref={canvasRef} width={260} height={90} className="sc-sig-canvas"
         onMouseDown={start} onMouseMove={draw} onMouseUp={end} onMouseLeave={end}
         onTouchStart={start} onTouchMove={draw} onTouchEnd={end}
       />
       <div className="sc-sig-row">
         <button className="sc-sig-clear" onClick={clear}>Clear</button>
-        {hasSig && <span className="sc-sig-done">✓ Signed</span>}
+        {hasSig && <span className="sc-sig-done">✓ Drawn</span>}
       </div>
     </div>
   );
 };
+
+// ─── SIG BOX — terpisah per user, simpan ke DB ────────────────
+const SigBox = ({ label, sigData, canSign, onSign, onClear }) => (
+  <div className="sc-sig-wrap">
+    <div className="sc-sig-label">{label}</div>
+    {sigData ? (
+      <div>
+        <img src={sigData} style={{ height: "80px", border: "1px solid #e2e8f0", borderRadius: "8px", display: "block", background: "white" }} alt="signature" />
+        <div style={{ display: "flex", gap: "8px", marginTop: "6px", alignItems: "center" }}>
+          <span className="sc-sig-done">✓ Signed</span>
+          {canSign && <button className="sc-sig-clear" onClick={onClear}>Clear</button>}
+        </div>
+      </div>
+    ) : canSign ? (
+      <SignatureCanvas label="" onSave={onSign} onClear={() => {}} />
+    ) : (
+      <div style={{ height: "90px", border: "1.5px dashed #e2e8f0", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", background: "#fafafa" }}>
+        <span style={{ fontSize: "12px", color: "#94a3b8", textAlign: "center", padding: "0 1rem" }}>
+          Waiting for {label.split("—")[0].trim()} to sign on their device
+        </span>
+      </div>
+    )}
+  </div>
+);
 
 // ─── CHAT BUBBLE ──────────────────────────────────────────────
 const ChatBubble = ({ msg, isMine, myInitials, otherInitials }) => (
@@ -96,13 +119,11 @@ const ChatBubble = ({ msg, isMine, myInitials, otherInitials }) => (
 export default function ScopeChangeNegotiation() {
   const navigate = useNavigate();
   const { id } = useParams();
-
   const user = JSON.parse(localStorage.getItem("user"));
   const token = localStorage.getItem("token");
 
   const [scopeChange, setScopeChange] = useState(null);
   const [loading, setLoading] = useState(true);
-
   const [messages, setMessages] = useState([]);
   const [composerText, setComposerText] = useState("");
   const [composerMode, setComposerMode] = useState("message");
@@ -110,12 +131,12 @@ export default function ScopeChangeNegotiation() {
   const [counterDays, setCounterDays] = useState("");
   const [counterNote, setCounterNote] = useState("");
   const [sending, setSending] = useState(false);
-
   const [isFinalized, setIsFinalized] = useState(false);
   const [finalTerms, setFinalTerms] = useState(null);
   const [showContract, setShowContract] = useState(false);
-  const [sigClient, setSigClient] = useState(null);
-  const [sigFreelancer, setSigFreelancer] = useState(null);
+
+  // ── Signatures terpisah per user, disimpan di DB ──
+  const [signatures, setSignatures] = useState({ client: null, freelancer: null });
 
   const chatBottomRef = useRef(null);
 
@@ -134,6 +155,23 @@ export default function ScopeChangeNegotiation() {
     chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // ── Load signatures dari DB saat contract dibuka ──
+  useEffect(() => {
+    if (!showContract || !isFinalized || !id) return;
+    fetch(`http://localhost:3001/api/signatures/scope_change/${id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          const sigs = {};
+          data.forEach(s => { sigs[s.role] = s.signature_data; });
+          setSignatures(sigs);
+        }
+      })
+      .catch(err => console.error("Gagal load signatures:", err));
+  }, [showContract, isFinalized, id]);
+
   const fetchScopeChange = async () => {
     try {
       const res = await fetch(`http://localhost:3001/api/scope-changes/${id}`, {
@@ -142,20 +180,13 @@ export default function ScopeChangeNegotiation() {
       const data = await res.json();
       setScopeChange(data);
 
-      // Load messages dari database
       const savedMsgs = data.messages || [];
       if (savedMsgs.length > 0) {
         setMessages(savedMsgs);
       } else {
-        // Initial message dari client
         setMessages([{
-          id: 1,
-          sender: "client",
-          senderName: data.client_name,
-          type: "scope_request",
-          text: data.description,
-          budget: data.additional_budget,
-          days: data.additional_days,
+          id: 1, sender: "client", senderName: data.client_name, type: "scope_request",
+          text: data.description, budget: data.additional_budget, days: data.additional_days,
           timestamp: new Date(data.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }),
         }]);
       }
@@ -163,10 +194,7 @@ export default function ScopeChangeNegotiation() {
       if (data.status === "accepted" || data.status === "rejected") {
         setIsFinalized(true);
         if (data.status === "accepted") {
-          setFinalTerms({
-            budget: data.counter_budget || data.additional_budget,
-            days: data.counter_days || data.additional_days,
-          });
+          setFinalTerms({ budget: data.counter_budget || data.additional_budget, days: data.counter_days || data.additional_days });
         }
       }
     } catch (err) {
@@ -183,22 +211,13 @@ export default function ScopeChangeNegotiation() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ messages: updatedMessages, status, final_budget: finalBudget, final_days: finalDays }),
       });
-    } catch (err) {
-      console.error("Gagal save messages:", err);
-    }
+    } catch (err) { console.error("Gagal save messages:", err); }
   };
 
   const handleSendMessage = () => {
     if (!composerText.trim()) return;
     const sender = isClient ? "client" : "freelancer";
-    const newMsg = {
-      id: messages.length + 1,
-      sender,
-      senderName: user?.name,
-      type: "message",
-      text: composerText.trim(),
-      timestamp: "Just now",
-    };
+    const newMsg = { id: messages.length + 1, sender, senderName: user?.name, type: "message", text: composerText.trim(), timestamp: "Just now" };
     const updated = [...messages, newMsg];
     setMessages(updated);
     setComposerText("");
@@ -210,10 +229,7 @@ export default function ScopeChangeNegotiation() {
     setSending(true);
     const sender = isClient ? "client" : "freelancer";
     const newMsg = {
-      id: messages.length + 1,
-      sender,
-      senderName: user?.name,
-      type: "counter",
+      id: messages.length + 1, sender, senderName: user?.name, type: "counter",
       text: counterNote || `I'd like to propose different terms for this scope change.`,
       budget: counterBudget ? parseInt(counterBudget) : null,
       days: counterDays ? parseInt(counterDays) : null,
@@ -221,9 +237,7 @@ export default function ScopeChangeNegotiation() {
     };
     const updated = [...messages, newMsg];
     setMessages(updated);
-    setCounterBudget("");
-    setCounterDays("");
-    setCounterNote("");
+    setCounterBudget(""); setCounterDays(""); setCounterNote("");
     setComposerMode("message");
     setSending(false);
     saveMessages(updated);
@@ -233,11 +247,8 @@ export default function ScopeChangeNegotiation() {
     const lastCounter = [...messages].reverse().find(m => m.budget != null || m.days != null);
     const finalBudget = lastCounter?.budget ?? scopeChange?.additional_budget ?? 0;
     const finalDays = lastCounter?.days ?? scopeChange?.additional_days ?? 0;
-
     const systemMsg = {
-      id: messages.length + 1,
-      sender: "system",
-      type: "system",
+      id: messages.length + 1, sender: "system", type: "system",
       text: `✓ Scope change accepted! Additional budget: $${finalBudget}, Additional days: ${finalDays}. A new contract has been generated.`,
       timestamp: "Just now",
     };
@@ -250,9 +261,7 @@ export default function ScopeChangeNegotiation() {
 
   const handleReject = () => {
     const systemMsg = {
-      id: messages.length + 1,
-      sender: "system",
-      type: "system",
+      id: messages.length + 1, sender: "system", type: "system",
       text: "✕ Scope change request has been declined.",
       timestamp: "Just now",
     };
@@ -264,10 +273,14 @@ export default function ScopeChangeNegotiation() {
 
   const handleDownloadContract = () => {
     const date = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-    const sigClientHTML = sigClient ? `<img src="${sigClient}" style="height:60px;display:block;margin-top:8px;" />` : '<div style="height:60px;border-bottom:1px solid #cbd5e1;margin-top:8px;width:200px;"></div>';
-    const sigFreelancerHTML = sigFreelancer ? `<img src="${sigFreelancer}" style="height:60px;display:block;margin-top:8px;" />` : '<div style="height:60px;border-bottom:1px solid #cbd5e1;margin-top:8px;width:200px;"></div>';
+    const sigClientHTML = signatures.client
+      ? `<img src="${signatures.client}" style="height:60px;display:block;margin-top:8px;" />`
+      : '<div style="height:60px;border-bottom:1px solid #cbd5e1;margin-top:8px;width:200px;"></div>';
+    const sigFreelancerHTML = signatures.freelancer
+      ? `<img src="${signatures.freelancer}" style="height:60px;display:block;margin-top:8px;" />`
+      : '<div style="height:60px;border-bottom:1px solid #cbd5e1;margin-top:8px;width:200px;"></div>';
 
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Scope Change Contract</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Helvetica Neue',Arial,sans-serif;color:#1e293b;padding:48px}.logo{font-size:22px;font-weight:800;margin-bottom:8px}.logo span{color:#7c3aed}.tag{font-size:10px;font-weight:700;letter-spacing:2px;color:#7c3aed;text-transform:uppercase;margin-bottom:32px;display:block}.new-badge{display:inline-block;background:#f3e8ff;color:#7c3aed;border:1px solid #e9d5ff;border-radius:20px;padding:4px 14px;font-size:12px;font-weight:700;margin-bottom:16px}.title{font-size:26px;font-weight:800;margin-bottom:24px}.parties{display:flex;gap:0;margin-bottom:28px;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden}.party{flex:1;padding:18px 22px;background:#f8fafc}.party:first-child{border-right:1px solid #e2e8f0}.party-label{font-size:10px;font-weight:700;letter-spacing:1.5px;color:#94a3b8;text-transform:uppercase;margin-bottom:6px}.party-name{font-size:16px;font-weight:700}.divider{height:1px;background:#e2e8f0;margin:24px 0}.row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #f1f5f9}.row-label{font-size:13px;color:#64748b}.row-val{font-size:14px;font-weight:700}.green{color:#15803d}.purple{color:#7c3aed}.sig-section{display:flex;gap:48px;margin-top:36px}.sig-box{flex:1}.sig-label{font-size:10px;font-weight:700;letter-spacing:1px;color:#94a3b8;text-transform:uppercase}.sig-name{font-size:12px;color:#64748b;margin-top:6px}.note{font-size:11px;color:#94a3b8;text-align:center;margin-top:28px;padding-top:16px;border-top:1px solid #e2e8f0}</style></head><body>
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Scope Change Contract</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Helvetica Neue',Arial,sans-serif;color:#1e293b;padding:48px}.logo{font-size:22px;font-weight:800;margin-bottom:8px}.logo span{color:#7c3aed}.tag{font-size:10px;font-weight:700;letter-spacing:2px;color:#7c3aed;text-transform:uppercase;margin-bottom:32px;display:block}.new-badge{display:inline-block;background:#f3e8ff;color:#7c3aed;border:1px solid #e9d5ff;border-radius:20px;padding:4px 14px;font-size:12px;font-weight:700;margin-bottom:16px}.title{font-size:26px;font-weight:800;margin-bottom:24px}.parties{display:flex;margin-bottom:28px;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden}.party{flex:1;padding:18px 22px;background:#f8fafc}.party:first-child{border-right:1px solid #e2e8f0}.party-label{font-size:10px;font-weight:700;letter-spacing:1.5px;color:#94a3b8;text-transform:uppercase;margin-bottom:6px}.party-name{font-size:16px;font-weight:700}.divider{height:1px;background:#e2e8f0;margin:24px 0}.row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #f1f5f9}.row-label{font-size:13px;color:#64748b}.row-val{font-size:14px;font-weight:700}.green{color:#15803d}.purple{color:#7c3aed}.sig-section{display:flex;gap:48px;margin-top:36px}.sig-box{flex:1}.sig-label{font-size:10px;font-weight:700;letter-spacing:1px;color:#94a3b8;text-transform:uppercase}.sig-name{font-size:12px;color:#64748b;margin-top:6px}.note{font-size:11px;color:#94a3b8;text-align:center;margin-top:28px;padding-top:16px;border-top:1px solid #e2e8f0}</style></head><body>
     <div class="logo">Proposal<span>in</span></div>
     <span class="tag">SCOPE CHANGE CONTRACT</span>
     <div class="new-badge">★ NEW CONTRACT — Supersedes Previous Agreement</div>
@@ -280,7 +293,7 @@ export default function ScopeChangeNegotiation() {
     <div class="row"><span class="row-label">Project</span><span class="row-val">${scopeChange?.project_title}</span></div>
     <div class="row"><span class="row-label">Original Budget</span><span class="row-val">${scopeChange?.current_budget}</span></div>
     <div class="row"><span class="row-label">Additional Budget</span><span class="row-val green">+$${finalTerms?.budget}</span></div>
-    <div class="row"><span class="row-label">Total Budget</span><span class="row-val green" style="font-size:16px">$${(parseInt((scopeChange?.current_budget || "0").replace(/[^0-9]/g, "")) + (finalTerms?.budget || 0))}</span></div>
+    <div class="row"><span class="row-label">Total Budget</span><span class="row-val green" style="font-size:16px">${scopeChange?.current_budget}</span></div>
     <div class="row"><span class="row-label">Additional Days</span><span class="row-val purple">+${finalTerms?.days} days</span></div>
     <div class="row"><span class="row-label">Scope Description</span><span class="row-val" style="max-width:60%;text-align:right">${scopeChange?.description}</span></div>
     <div class="row"><span class="row-label">Status</span><span class="row-val green">Active ✓</span></div>
@@ -299,20 +312,8 @@ export default function ScopeChangeNegotiation() {
     setTimeout(() => win.print(), 500);
   };
 
-  if (loading) return (
-    <div className="sc-page"><Navbar />
-      <p style={{ textAlign: "center", padding: "4rem", color: "#888" }}>Loading...</p>
-    </div>
-  );
-
-  if (!scopeChange) return (
-    <div className="sc-page"><Navbar />
-      <div style={{ textAlign: "center", padding: "4rem" }}>
-        <p>Scope change tidak ditemukan.</p>
-        <button onClick={() => navigate("/dashboard")} style={{ marginTop: "1rem", padding: "8px 16px", cursor: "pointer" }}>← Back to Dashboard</button>
-      </div>
-    </div>
-  );
+  if (loading) return (<div className="sc-page"><Navbar /><p style={{ textAlign: "center", padding: "4rem", color: "#888" }}>Loading...</p></div>);
+  if (!scopeChange) return (<div className="sc-page"><Navbar /><div style={{ textAlign: "center", padding: "4rem" }}><p>Scope change tidak ditemukan.</p><button onClick={() => navigate("/dashboard")} style={{ marginTop: "1rem", padding: "8px 16px", cursor: "pointer" }}>← Back to Dashboard</button></div></div>);
 
   const lastMsg = messages[messages.length - 1];
   const lastCounter = [...messages].reverse().find(m => (m.budget != null || m.days != null) && m.type === "counter");
@@ -321,7 +322,7 @@ export default function ScopeChangeNegotiation() {
     (!isClient && lastMsg?.sender === "client")
   );
 
-  // Contract modal
+  // ── CONTRACT MODAL ──
   if (showContract && isFinalized && scopeChange.status === "accepted") {
     return (
       <div className="sc-page">
@@ -347,37 +348,92 @@ export default function ScopeChangeNegotiation() {
               </div>
 
               <div className="sc-contract-divider" />
-
               <div className="sc-contract-terms">
                 <div className="sc-ct-row"><span>Project</span><strong>{scopeChange.project_title}</strong></div>
                 <div className="sc-ct-row"><span>Original Budget</span><strong>{scopeChange.current_budget}</strong></div>
                 <div className="sc-ct-row"><span>Additional Budget</span><strong className="green">+${finalTerms?.budget}</strong></div>
-                <div className="sc-ct-row"><span>Total Budget</span><strong className="green" style={{ fontSize: "16px" }}>${parseInt((scopeChange.current_budget || "0").replace(/[^0-9]/g, "")) + (finalTerms?.budget || 0)}</strong></div>
+                <div className="sc-ct-row"><span>Total Budget</span><strong className="green" style={{ fontSize: "16px" }}>{scopeChange.current_budget}</strong></div>
                 <div className="sc-ct-row"><span>Additional Days</span><strong className="purple">+{finalTerms?.days} days</strong></div>
                 <div className="sc-ct-row"><span>Status</span><strong className="green">Active ✓</strong></div>
               </div>
 
               <div className="sc-contract-divider" />
 
+              {/* ── SIGNATURES TERPISAH PER USER ── */}
               <div className="sc-sig-section-title">Digital Signatures</div>
-              <p className="sc-sig-hint">Both parties must sign to complete this contract.</p>
+              <p className="sc-sig-hint">
+                Each party signs their own section on their own device.
+                {isClient ? " You are signing as the Client." : " You are signing as the Freelancer."}
+              </p>
               <div className="sc-sig-row">
-                <SignatureCanvas label={`Client — ${scopeChange.client_name}`} onSave={setSigClient} onClear={() => setSigClient(null)} />
-                <SignatureCanvas label={`Freelancer — ${scopeChange.freelancer_name}`} onSave={setSigFreelancer} onClear={() => setSigFreelancer(null)} />
+                <SigBox
+                  label={`Client — ${scopeChange.client_name}`}
+                  sigData={signatures.client}
+                  canSign={isClient}
+                  onSign={async (dataUrl) => {
+                    try {
+                      await fetch("http://localhost:3001/api/signatures", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                        body: JSON.stringify({ contract_type: "scope_change", contract_id: id, role: "client", signature_data: dataUrl })
+                      });
+                      setSignatures(prev => ({ ...prev, client: dataUrl }));
+                    } catch (err) { console.error(err); }
+                  }}
+                  onClear={async () => {
+                    try {
+                      await fetch(`http://localhost:3001/api/signatures/scope_change/${id}`, {
+                        method: "DELETE", headers: { Authorization: `Bearer ${token}` }
+                      });
+                      setSignatures(prev => ({ ...prev, client: null }));
+                    } catch (err) { console.error(err); }
+                  }}
+                />
+                <SigBox
+                  label={`Freelancer — ${scopeChange.freelancer_name}`}
+                  sigData={signatures.freelancer}
+                  canSign={!isClient}
+                  onSign={async (dataUrl) => {
+                    try {
+                      await fetch("http://localhost:3001/api/signatures", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                        body: JSON.stringify({ contract_type: "scope_change", contract_id: id, role: "freelancer", signature_data: dataUrl })
+                      });
+                      setSignatures(prev => ({ ...prev, freelancer: dataUrl }));
+                    } catch (err) { console.error(err); }
+                  }}
+                  onClear={async () => {
+                    try {
+                      await fetch(`http://localhost:3001/api/signatures/scope_change/${id}`, {
+                        method: "DELETE", headers: { Authorization: `Bearer ${token}` }
+                      });
+                      setSignatures(prev => ({ ...prev, freelancer: null }));
+                    } catch (err) { console.error(err); }
+                  }}
+                />
               </div>
-              {sigClient && sigFreelancer && (
+              {signatures.client && signatures.freelancer && (
                 <p className="sc-sig-both-done">✓ Both parties signed. Ready to download.</p>
+              )}
+              {(!signatures.client || !signatures.freelancer) && (
+                <p style={{ fontSize: "12px", color: "#94a3b8", marginTop: "8px" }}>
+                  {isClient
+                    ? "Sign your section above. The freelancer will sign on their device."
+                    : "Sign your section above. The client will sign on their device."}
+                </p>
               )}
 
               <div className="sc-contract-divider" />
-              <p className="sc-contract-note">
-                Finalized on {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} via Proposalin.
-              </p>
+              <p className="sc-contract-note">Finalized on {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} via Proposalin.</p>
 
               <div className="sc-contract-actions">
-                <button className="sc-dl-btn" onClick={handleDownloadContract} disabled={!sigClient || !sigFreelancer} title={!sigClient || !sigFreelancer ? "Both must sign first" : ""}>
+                <button className="sc-dl-btn" onClick={handleDownloadContract}
+                  disabled={!signatures.client || !signatures.freelancer}
+                  title={!signatures.client || !signatures.freelancer ? "Both must sign first" : ""}
+                >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                  Download PDF {(!sigClient || !sigFreelancer) && "(Sign first)"}
+                  Download PDF {(!signatures.client || !signatures.freelancer) && "(Sign first)"}
                 </button>
                 <button className="sc-close-btn" onClick={() => setShowContract(false)}>Close</button>
               </div>
@@ -392,7 +448,6 @@ export default function ScopeChangeNegotiation() {
     <div className="sc-page">
       <Navbar />
       <div className="sc-body">
-
         <div className="sc-header">
           <button className="sc-back-btn" onClick={() => navigate("/dashboard")}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
@@ -415,8 +470,6 @@ export default function ScopeChangeNegotiation() {
         </div>
 
         <div className="sc-layout">
-
-          {/* ── CHAT ── */}
           <div className="sc-chat-panel">
             <div className="sc-chat-header">
               <div className="sc-chat-header-left">
@@ -455,11 +508,9 @@ export default function ScopeChangeNegotiation() {
                   </button>
                 </div>
               )}
-
               <div ref={chatBottomRef} />
             </div>
 
-            {/* ── COMPOSER ── */}
             {!isFinalized && (
               <div className="sc-composer">
                 {composerMode === "counter" ? (
@@ -494,21 +545,16 @@ export default function ScopeChangeNegotiation() {
                   <>
                     <div className="sc-composer-toolbar">
                       <button className={`sc-toolbar-btn ${composerMode === "message" ? "active" : ""}`} onClick={() => setComposerMode("message")}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                        Message
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Message
                       </button>
                       <button className="sc-toolbar-btn sc-toolbar-btn--counter" onClick={() => setComposerMode("counter")}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48 2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48 2.83-2.83"/></svg>
-                        Counter Offer
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48 2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48 2.83-2.83"/></svg>Counter Offer
                       </button>
                     </div>
                     <div className="sc-composer-input-row">
-                      <textarea
-                        className="sc-composer-textarea"
+                      <textarea className="sc-composer-textarea"
                         placeholder={isClient ? `Reply to ${scopeChange.freelancer_name}…` : `Reply to ${scopeChange.client_name}…`}
-                        value={composerText}
-                        onChange={e => setComposerText(e.target.value)}
-                        rows={3}
+                        value={composerText} onChange={e => setComposerText(e.target.value)} rows={3}
                         onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSendMessage(); }}
                       />
                       <button className="sc-send-btn" onClick={handleSendMessage} disabled={!composerText.trim()}>
@@ -522,7 +568,6 @@ export default function ScopeChangeNegotiation() {
             )}
           </div>
 
-          {/* ── SIDEBAR ── */}
           <div className="sc-sidebar">
             <div className="sc-sidebar-card">
               <div className="sc-sidebar-title">Scope Change Details</div>
@@ -549,12 +594,10 @@ export default function ScopeChangeNegotiation() {
                 <div className="sc-sidebar-title">Respond</div>
                 <p className="sc-action-hint">Accept the current terms or send a counter offer.</p>
                 <button className="sc-accept-btn" onClick={handleAccept}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                  Accept Terms
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>Accept Terms
                 </button>
                 <button className="sc-reject-btn" onClick={handleReject}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                  Decline
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Decline
                 </button>
               </div>
             )}
@@ -566,9 +609,7 @@ export default function ScopeChangeNegotiation() {
                   <div className="sc-sidebar-row"><span>Add. Budget</span><strong className="green">+${finalTerms?.budget}</strong></div>
                   <div className="sc-sidebar-row"><span>Add. Days</span><strong className="blue">+{finalTerms?.days} days</strong></div>
                 </div>
-                <button className="sc-view-contract-btn" onClick={() => setShowContract(true)}>
-                  📄 View New Contract
-                </button>
+                <button className="sc-view-contract-btn" onClick={() => setShowContract(true)}>📄 View New Contract</button>
               </div>
             )}
           </div>

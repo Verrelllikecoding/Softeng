@@ -10,6 +10,13 @@ const categoryColors = {
   "Business & Consulting": { bg: "#fff7ed", color: "#c2410c" },
 };
 
+const categoryGradients = {
+  "Technology":            "linear-gradient(135deg, #1e3a5f 0%, #1a56db 100%)",
+  "Design & Creative":     "linear-gradient(135deg, #4a1d96 0%, #7c3aed 100%)",
+  "Marketing":             "linear-gradient(135deg, #064e3b 0%, #10b981 100%)",
+  "Business & Consulting": "linear-gradient(135deg, #7c2d12 0%, #ea580c 100%)",
+};
+
 const Navbar = () => {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
@@ -47,6 +54,7 @@ export default function ProjectDetail() {
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [lightbox, setLightbox] = useState(false);
   const token = localStorage.getItem("token");
 
   useEffect(() => {
@@ -87,6 +95,9 @@ export default function ProjectDetail() {
   );
 
   const catColor = categoryColors[project.category] || { bg: "#f1f5f9", color: "#475569" };
+  const gradient = categoryGradients[project.category] || "linear-gradient(135deg, #1e293b, #475569)";
+  const imageUrl = project.image_url ? `http://localhost:3001${project.image_url}` : null;
+
   const clientInitials = project.client_name
     ? project.client_name.split(" ").map(n => n[0]).join("").toUpperCase()
     : "C";
@@ -100,6 +111,23 @@ export default function ProjectDetail() {
   return (
     <div className="detail-page">
       <Navbar />
+
+      {/* ── LIGHTBOX ── */}
+      {lightbox && imageUrl && (
+        <div
+          className="detail-lightbox-overlay"
+          onClick={() => setLightbox(false)}
+        >
+          <button className="detail-lightbox-close" onClick={() => setLightbox(false)}>✕</button>
+          <img
+            src={imageUrl}
+            alt={project.title}
+            className="detail-lightbox-img"
+            onClick={e => e.stopPropagation()}
+          />
+        </div>
+      )}
+
       <div className="detail-body">
 
         <div className="breadcrumb">
@@ -114,9 +142,37 @@ export default function ProjectDetail() {
           <div className="detail-main">
 
             <div className="detail-header-card">
-              <div className="detail-thumb">
+              {/* ── PROJECT IMAGE / THUMBNAIL ── */}
+              <div
+                className="detail-thumb"
+                style={{
+                  background: imageUrl ? "none" : gradient,
+                  cursor: imageUrl ? "zoom-in" : "default",
+                  position: "relative",
+                  overflow: "hidden",
+                }}
+                onClick={() => imageUrl && setLightbox(true)}
+              >
+                {imageUrl && (
+                  <img
+                    src={imageUrl}
+                    alt={project.title}
+                    className="detail-thumb-img"
+                    onError={e => {
+                      e.target.style.display = "none";
+                      e.target.parentElement.style.background = gradient;
+                    }}
+                  />
+                )}
                 <div className="detail-thumb-overlay" />
+                {imageUrl && (
+                  <div className="detail-thumb-zoom-hint">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                    Click to enlarge
+                  </div>
+                )}
               </div>
+
               <div className="detail-header-info">
                 <div className="detail-badges">
                   <span className="detail-cat-badge" style={{ background: catColor.bg, color: catColor.color }}>

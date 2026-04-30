@@ -53,6 +53,8 @@ export default function PostProject() {
     deadline: "",
     description: "",
   });
+  // Simpan nilai date input terpisah supaya bisa ditampilkan di input
+  const [dateValue, setDateValue] = useState("");
   const [skillInput, setSkillInput] = useState("");
   const [skills, setSkills] = useState([]);
   const [image, setImage] = useState(null);
@@ -67,6 +69,21 @@ export default function PostProject() {
     if (!file) return;
     setImage(file);
     setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleDateChange = (e) => {
+    const raw = e.target.value; // format: "2025-05-25"
+    setDateValue(raw);
+    if (!raw) { set("deadline", ""); return; }
+    // Format jadi "May 25, 2025"
+    const [year, month, day] = raw.split("-");
+    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    const formatted = date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+    set("deadline", formatted);
   };
 
   const addSkill = () => {
@@ -138,7 +155,6 @@ export default function PostProject() {
             <p className="pp-subtitle">Describe your project and find the perfect freelancer.</p>
           </div>
 
-          {/* Step indicator */}
           <div className="pp-steps">
             {["Project Info", "Skills & Budget", "Preview"].map((label, i) => {
               const s = i + 1;
@@ -288,13 +304,14 @@ export default function PostProject() {
                   <label>Deadline <span className="pp-required">*</span></label>
                   <input
                     type="date"
-                    value={form.deadline}
-                    onChange={e => {
-                      const date = new Date(e.target.value);
-                      const formatted = date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-                      set("deadline", formatted);
-                    }}
+                    value={dateValue}
+                    onChange={handleDateChange}
                   />
+                  {form.deadline && (
+                    <span className="pp-hint" style={{ color: "#10b981", marginTop: "4px" }}>
+                      ✓ Selected: {form.deadline}
+                    </span>
+                  )}
                 </div>
               </div>
 

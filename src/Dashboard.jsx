@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import "./Dashboard.css";
 import NotificationBell from "./NotificationBell";
+import "./Dashboard.css";
 
 const statusConfig = {
   Pending:   { label: "Pending",   cls: "pending",   icon: "⏳" },
@@ -44,7 +44,7 @@ const Navbar = ({ user, onLogout }) => {
   );
 };
 
-// ─── STAT CARD ────────────────────────────────────────────────
+// ─── STAT CARD (tidak bisa diklik, display only) ──────────────
 const StatCard = ({ label, value, sub, accent, icon }) => (
   <div className={`dash-stat-card ${accent ? `dash-stat-card--${accent}` : ""}`}>
     <div className="dash-stat-icon">{icon}</div>
@@ -56,353 +56,68 @@ const StatCard = ({ label, value, sub, accent, icon }) => (
   </div>
 );
 
-// ─── SCOPE CHANGE REQUEST MODAL (Client) ──────────────────────
-const ScopeChangeModal = ({ proposal, project, token, onClose, onSuccess }) => {
-  const [description, setDescription] = useState("");
-  const [additionalBudget, setAdditionalBudget] = useState("");
-  const [additionalDays, setAdditionalDays] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-
-  const handleSubmit = async () => {
-    if (!description.trim()) { alert("Deskripsi scope change wajib diisi!"); return; }
-    setSubmitting(true);
-    try {
-      const res = await fetch("http://localhost:3001/api/scope-changes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          proposal_id: proposal.id,
-          project_id: project.id,
-          freelancer_id: proposal.freelancer_id,
-          description,
-          additional_budget: parseInt(additionalBudget) || 0,
-          additional_days: parseInt(additionalDays) || 0,
-        }),
-      });
-      const data = await res.json();
-      if (data.scopeChange) {
-        onSuccess();
-        onClose();
-      } else {
-        alert(data.message || "Gagal submit scope change");
-      }
-    } catch (err) {
-      alert("Tidak bisa terhubung ke server");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="dash-modal-overlay" onClick={onClose}>
-      <div className="dash-modal dash-modal--scope" onClick={e => e.stopPropagation()}>
-        <div className="dash-modal-header">
-          <div>
-            <div className="dash-scope-modal-tag">SCOPE CHANGE REQUEST</div>
-            <p className="dash-modal-subtitle">{project.title}</p>
-          </div>
-          <button className="dash-modal-close" onClick={onClose}>✕</button>
-        </div>
-
-        <div className="dash-modal-body">
-          <div className="dash-scope-info-banner">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
-            <p>A scope change request will be sent to <strong>{proposal.freelancer_name}</strong> for review. The freelancer can accept or reject the request.</p>
-          </div>
-
-          <div className="dash-scope-field">
-            <label>
-              <span className="dash-scope-field-num">01</span>
-              Description of Additional Work
-              <span className="dash-scope-required">*</span>
-            </label>
-            <textarea
-              rows={5}
-              placeholder="Describe in detail what additional work or changes you need. Be specific about deliverables, requirements, and expectations..."
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-            />
-            <span className="dash-scope-hint">{description.length} characters — be as specific as possible</span>
-          </div>
-
-          <div className="dash-scope-terms">
-            <div className="dash-scope-terms-title">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48 2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48 2.83-2.83"/></svg>
-              Proposed Term Adjustments
-            </div>
-            <div className="dash-scope-terms-row">
-              <div className="dash-scope-term-item">
-                <label>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                  Additional Budget
-                </label>
-                <div className="dash-scope-input-wrap">
-                  <span>+$</span>
-                  <input
-                    type="number"
-                    min="0"
-                    placeholder="0"
-                    value={additionalBudget}
-                    onChange={e => setAdditionalBudget(e.target.value)}
-                  />
-                </div>
-                <p className="dash-scope-current">Current: {project.budget}</p>
-              </div>
-              <div className="dash-scope-term-item">
-                <label>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                  Additional Days
-                </label>
-                <div className="dash-scope-input-wrap">
-                  <span>+</span>
-                  <input
-                    type="number"
-                    min="0"
-                    placeholder="0"
-                    value={additionalDays}
-                    onChange={e => setAdditionalDays(e.target.value)}
-                  />
-                  <span>days</span>
-                </div>
-                <p className="dash-scope-current">Current deadline: {project.deadline}</p>
-              </div>
-            </div>
-          </div>
-
-          {(additionalBudget || additionalDays) && (
-            <div className="dash-scope-summary">
-              <div className="dash-scope-summary-title">📋 Summary of Changes</div>
-              <div className="dash-scope-summary-rows">
-                {additionalBudget > 0 && (
-                  <div className="dash-scope-summary-row">
-                    <span>Budget increase</span>
-                    <strong className="green">+${additionalBudget}</strong>
-                  </div>
-                )}
-                {additionalDays > 0 && (
-                  <div className="dash-scope-summary-row">
-                    <span>Timeline extension</span>
-                    <strong className="blue">+{additionalDays} days</strong>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          <div className="dash-scope-actions">
-            <button className="dash-scope-cancel-btn" onClick={onClose}>Cancel</button>
-            <button className="dash-scope-submit-btn" onClick={handleSubmit} disabled={submitting || !description.trim()}>
-              {submitting ? (
-                <><span className="dash-scope-spinner" />Sending...</>
-              ) : (
-                <><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Send Scope Change Request</>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ─── SCOPE CHANGE CARD (Freelancer) ───────────────────────────
-const ScopeChangeCard = ({ sc, token, onRespond }) => {
-  const [responding, setResponding] = useState(false);
-
-  const handleRespond = async (status) => {
-    setResponding(true);
-    try {
-      const res = await fetch(`http://localhost:3001/api/scope-changes/${sc.id}/respond`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ status }),
-      });
-      const data = await res.json();
-      if (data.scopeChange) onRespond();
-      else alert(data.message || "Gagal respond");
-    } catch (err) {
-      alert("Tidak bisa terhubung ke server");
-    } finally {
-      setResponding(false);
-    }
-  };
-
-  const statusMap = {
-    pending:  { label: "Awaiting Response", cls: "pending", icon: "⏳" },
-    accepted: { label: "Accepted",          cls: "accepted", icon: "✓" },
-    rejected: { label: "Rejected",          cls: "rejected", icon: "✕" },
-  };
-  const st = statusMap[sc.status] || statusMap.pending;
-
-  return (
-    <div className="dash-scope-card">
-      <div className="dash-scope-card-header">
-        <div className="dash-scope-card-tag">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48 2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48 2.83-2.83"/></svg>
-          Scope Change Request
-        </div>
-        <span className={`dash-scope-status dash-scope-status--${st.cls}`}>{st.icon} {st.label}</span>
-      </div>
-
-      <h4 className="dash-scope-card-project">{sc.project_title}</h4>
-      <p className="dash-scope-card-client">From: <strong>{sc.client_name}</strong> · {new Date(sc.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
-      <p className="dash-scope-card-desc">{sc.description}</p>
-
-      <div className="dash-scope-card-terms">
-        {sc.additional_budget > 0 && (
-          <div className="dash-scope-card-term">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            +${sc.additional_budget} additional budget
-          </div>
-        )}
-        {sc.additional_days > 0 && (
-          <div className="dash-scope-card-term">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-            +{sc.additional_days} additional days
-          </div>
-        )}
-      </div>
-
-      {sc.status === "pending" && (
-        <div className="dash-scope-card-actions">
-          <button className="dash-scope-accept-btn" onClick={() => handleRespond("accepted")} disabled={responding}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-            Accept Scope Change
-          </button>
-          <button className="dash-scope-reject-btn" onClick={() => handleRespond("rejected")} disabled={responding}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            Reject
-          </button>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ─── PROPOSALS MODAL ──────────────────────────────────────────
-const ProposalsModal = ({ project, onClose, token }) => {
+// ─── FREELANCER PROPOSAL CARD ─────────────────────────────────
+const ProposalCard = ({ proposal, scopeChanges }) => {
   const navigate = useNavigate();
-  const proposals = project.proposals || [];
-  const [scopeTarget, setScopeTarget] = useState(null);
+  const st = statusConfig[proposal.status] || { label: proposal.status, cls: "pending", icon: "⏳" };
 
-  const handleAccept = async (proposalId) => {
-    try {
-      await fetch(`http://localhost:3001/api/proposals/${proposalId}/status`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ status: "Accepted" }),
-      });
-      alert("Proposal accepted!");
-      onClose();
-    } catch (err) {
-      alert("Gagal update status");
-    }
-  };
-
-  const handleReject = async (proposalId) => {
-    try {
-      await fetch(`http://localhost:3001/api/proposals/${proposalId}/status`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ status: "Rejected" }),
-      });
-      alert("Proposal rejected!");
-      onClose();
-    } catch (err) {
-      alert("Gagal update status");
-    }
-  };
-
-  if (scopeTarget) {
-    return (
-      <ScopeChangeModal
-        proposal={scopeTarget}
-        project={project}
-        token={token}
-        onClose={() => setScopeTarget(null)}
-        onSuccess={() => { setScopeTarget(null); alert("Scope change request sent!"); }}
-      />
-    );
-  }
+  // Cari scope change yang terkait dengan proposal ini
+  const relatedScopeChanges = scopeChanges.filter(sc => sc.proposal_id === proposal.id);
+  const pendingScopeChanges = relatedScopeChanges.filter(sc => sc.status === "pending");
 
   return (
-    <div className="dash-modal-overlay" onClick={onClose}>
-      <div className="dash-modal" onClick={e => e.stopPropagation()}>
-        <div className="dash-modal-header">
-          <div>
-            <h2 className="dash-modal-title">Proposals for</h2>
-            <p className="dash-modal-subtitle">{project.title}</p>
-          </div>
-          <button className="dash-modal-close" onClick={onClose}>✕</button>
-        </div>
-
-        <div className="dash-modal-body">
-          {proposals.length === 0 ? (
-            <p style={{ textAlign: "center", color: "#94a3b8", padding: "2rem" }}>No proposals yet.</p>
-          ) : (
-            proposals.map(p => {
-              const st = statusConfig[p.status] || { label: p.status, cls: "pending", icon: "⏳" };
-              const initials = p.freelancer_name
-                ? p.freelancer_name.split(" ").map(n => n[0]).join("").toUpperCase()
-                : "F";
-              const isActive = ["Accepted", "Delivered", "Completed"].includes(p.status);
-              return (
-                <div className="dash-modal-proposal" key={p.id}>
-                  <div className="dash-modal-proposal-header">
-                    <div className="dash-modal-avatar">{initials}</div>
-                    <div className="dash-modal-freelancer-info">
-                      <span className="dash-modal-freelancer-name">{p.freelancer_name}</span>
-                      <span className="dash-modal-date">{new Date(p.created_at).toLocaleDateString()}</span>
-                    </div>
-                    <span className={`dash-status-badge dash-status-badge--${st.cls}`}>
-                      {st.icon} {st.label}
-                    </span>
-                  </div>
-
-                  <p className="dash-modal-content">{p.content?.slice(0, 200)}...</p>
-
-                  <div className="dash-modal-actions">
-                    <button className="dash-modal-negotiate-btn" onClick={() => navigate(`/projects/${project.id}/negotiate/${p.id}`)}>
-                      💬 Negotiate
-                    </button>
-                    {p.status === "Pending" && (
-                      <>
-                        <button className="dash-modal-accept-btn" onClick={() => handleAccept(p.id)}>✓ Accept</button>
-                        <button className="dash-modal-reject-btn" onClick={() => handleReject(p.id)}>✕ Reject</button>
-                      </>
-                    )}
-                    {isActive && (
-                      <>
-                        <button className="dash-modal-delivery-btn" onClick={() => navigate(`/delivery/${p.id}`)}>
-                          📦 View Delivery
-                        </button>
-                        {p.status !== "Completed" && (
-                          <button className="dash-modal-scope-btn" onClick={() => setScopeTarget(p)}>
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48 2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48 2.83-2.83"/></svg>
-                            Request Scope Change
-                          </button>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </div>
-              );
-            })
+    <div className="dash-proposal-card">
+      <div className={`dash-card-accent dash-card-accent--${st.cls}`} />
+      <div className="dash-card-main">
+        <div className="dash-card-top">
+          <span className={`dash-status-badge dash-status-badge--${st.cls}`}>{st.icon} {st.label}</span>
+          {pendingScopeChanges.length > 0 && (
+            <span className="dash-scope-pending-badge">
+              🔄 {pendingScopeChanges.length} Scope Change
+            </span>
           )}
         </div>
+        <h3 className="dash-card-title">{proposal.project_title}</h3>
+        <p className="dash-card-client">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          {new Date(proposal.created_at).toLocaleDateString()}
+        </p>
+        <p className="dash-card-last-msg">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          {proposal.content?.slice(0, 80)}...
+        </p>
+
+        {/* Scope change list */}
+        {relatedScopeChanges.length > 0 && (
+          <div className="dash-card-scope-list">
+            {relatedScopeChanges.map(sc => (
+              <button
+                key={sc.id}
+                className={`dash-card-scope-item dash-card-scope-item--${sc.status}`}
+                onClick={() => navigate(`/scope-change/${sc.id}`)}
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48 2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48 2.83-2.83"/></svg>
+                Scope Change · {sc.status === "pending" ? "⏳ Awaiting" : sc.status === "accepted" ? "✓ Accepted" : "✕ Rejected"}
+                <span style={{ marginLeft: "auto" }}>→</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="dash-card-right">
+        {(proposal.status === "Accepted" || proposal.status === "Delivered") && (
+          <button className="dash-card-btn dash-card-btn--delivery" onClick={() => navigate(`/delivery/${proposal.id}`)}>
+            {proposal.status === "Delivered" ? "View Delivery →" : "Submit Delivery →"}
+          </button>
+        )}
+        <button className={`dash-card-btn dash-card-btn--${st.cls}`} onClick={() => navigate(`/projects/${proposal.project_id}/negotiate/${proposal.id}`)}>
+          View Negotiation →
+        </button>
       </div>
     </div>
   );
 };
-
-// ─── EMPTY STATE ──────────────────────────────────────────────
-const EmptyState = ({ title, sub, btnLabel, onBtn }) => (
-  <div className="dash-empty">
-    <p className="dash-empty-title">{title}</p>
-    <p className="dash-empty-sub">{sub}</p>
-    <button className="dash-empty-btn" onClick={onBtn}>{btnLabel}</button>
-  </div>
-);
 
 // ─── CLIENT PROJECT CARD ──────────────────────────────────────
 const ClientProjectCard = ({ project, onViewProposals }) => {
@@ -416,9 +131,7 @@ const ClientProjectCard = ({ project, onViewProposals }) => {
   return (
     <div className="dash-client-card">
       <div className="dash-client-card-header">
-        <span className="dash-client-cat-badge" style={{ background: catColor.bg, color: catColor.color }}>
-          {project.sub_category}
-        </span>
+        <span className="dash-client-cat-badge" style={{ background: catColor.bg, color: catColor.color }}>{project.sub_category}</span>
         <span className={`dash-client-status ${project.status?.toLowerCase()}`}>● {project.status}</span>
       </div>
       <h3 className="dash-client-card-title">{project.title}</h3>
@@ -456,40 +169,207 @@ const ClientProjectCard = ({ project, onViewProposals }) => {
   );
 };
 
-// ─── FREELANCER PROPOSAL CARD ─────────────────────────────────
-const ProposalCard = ({ proposal }) => {
-  const navigate = useNavigate();
-  const st = statusConfig[proposal.status] || { label: proposal.status, cls: "pending", icon: "⏳" };
+// ─── SCOPE CHANGE MODAL ───────────────────────────────────────
+const ScopeChangeModal = ({ proposal, project, token, onClose, onSuccess }) => {
+  const [description, setDescription] = useState("");
+  const [additionalBudget, setAdditionalBudget] = useState("");
+  const [additionalDays, setAdditionalDays] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!description.trim()) { alert("Deskripsi scope change wajib diisi!"); return; }
+    setSubmitting(true);
+    try {
+      const res = await fetch("http://localhost:3001/api/scope-changes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          proposal_id: proposal.id,
+          project_id: project.id,
+          freelancer_id: proposal.freelancer_id,
+          description,
+          additional_budget: parseInt(additionalBudget) || 0,
+          additional_days: parseInt(additionalDays) || 0,
+        }),
+      });
+      const data = await res.json();
+      if (data.scopeChange) onSuccess(data.scopeChange.id);
+      else alert(data.message || "Gagal submit scope change");
+    } catch (err) {
+      alert("Tidak bisa terhubung ke server");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
-    <div className="dash-proposal-card">
-      <div className={`dash-card-accent dash-card-accent--${st.cls}`} />
-      <div className="dash-card-main">
-        <div className="dash-card-top">
-          <span className={`dash-status-badge dash-status-badge--${st.cls}`}>{st.icon} {st.label}</span>
+    <div className="dash-modal-overlay" onClick={onClose}>
+      <div className="dash-modal dash-modal--scope" onClick={e => e.stopPropagation()}>
+        <div className="dash-modal-header">
+          <div>
+            <div className="dash-scope-modal-tag">SCOPE CHANGE REQUEST</div>
+            <p className="dash-modal-subtitle">{project.title}</p>
+          </div>
+          <button className="dash-modal-close" onClick={onClose}>✕</button>
         </div>
-        <h3 className="dash-card-title">{proposal.project_title}</h3>
-        <p className="dash-card-client">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          {new Date(proposal.created_at).toLocaleDateString()}
-        </p>
-        <p className="dash-card-last-msg">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          {proposal.content?.slice(0, 80)}...
-        </p>
-      </div>
-      <div className="dash-card-right">
-        {(proposal.status === "Accepted" || proposal.status === "Delivered") && (
-          <button className="dash-card-btn dash-card-btn--delivery" onClick={() => navigate(`/delivery/${proposal.id}`)}>
-            {proposal.status === "Delivered" ? "View Delivery →" : "Submit Delivery →"}
-          </button>
-        )}
-        <button className={`dash-card-btn dash-card-btn--${st.cls}`} onClick={() => navigate(`/projects/${proposal.project_id}/negotiate/${proposal.id}`)}>
-          View Negotiation →
-        </button>
+        <div className="dash-modal-body">
+          <div className="dash-scope-info-banner">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+            <p>A scope change request will be sent to <strong>{proposal.freelancer_name}</strong> for review. They can negotiate, accept, or reject the request.</p>
+          </div>
+          <div className="dash-scope-field">
+            <label><span className="dash-scope-field-num">01</span>Description of Additional Work<span className="dash-scope-required">*</span></label>
+            <textarea rows={5} placeholder="Describe in detail what additional work or changes you need..." value={description} onChange={e => setDescription(e.target.value)} />
+            <span className="dash-scope-hint">{description.length} characters</span>
+          </div>
+          <div className="dash-scope-terms">
+            <div className="dash-scope-terms-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48 2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48 2.83-2.83"/></svg>
+              Proposed Term Adjustments
+            </div>
+            <div className="dash-scope-terms-row">
+              <div className="dash-scope-term-item">
+                <label>Additional Budget</label>
+                <div className="dash-scope-input-wrap"><span>+$</span><input type="number" min="0" placeholder="0" value={additionalBudget} onChange={e => setAdditionalBudget(e.target.value)} /></div>
+                <p className="dash-scope-current">Current: {project.budget}</p>
+              </div>
+              <div className="dash-scope-term-item">
+                <label>Additional Days</label>
+                <div className="dash-scope-input-wrap"><span>+</span><input type="number" min="0" placeholder="0" value={additionalDays} onChange={e => setAdditionalDays(e.target.value)} /><span>days</span></div>
+                <p className="dash-scope-current">Current deadline: {project.deadline}</p>
+              </div>
+            </div>
+          </div>
+          {(additionalBudget || additionalDays) && (
+            <div className="dash-scope-summary">
+              <div className="dash-scope-summary-title">📋 Summary of Changes</div>
+              <div className="dash-scope-summary-rows">
+                {parseInt(additionalBudget) > 0 && <div className="dash-scope-summary-row"><span>Budget increase</span><strong className="green">+${additionalBudget}</strong></div>}
+                {parseInt(additionalDays) > 0 && <div className="dash-scope-summary-row"><span>Timeline extension</span><strong className="blue">+{additionalDays} days</strong></div>}
+              </div>
+            </div>
+          )}
+          <div className="dash-scope-actions">
+            <button className="dash-scope-cancel-btn" onClick={onClose}>Cancel</button>
+            <button className="dash-scope-submit-btn" onClick={handleSubmit} disabled={submitting || !description.trim()}>
+              {submitting ? <><span className="dash-scope-spinner" />Sending...</> : <><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Send Scope Change Request</>}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
 };
+
+// ─── PROPOSALS MODAL ──────────────────────────────────────────
+const ProposalsModal = ({ project, onClose, token }) => {
+  const navigate = useNavigate();
+  const proposals = project.proposals || [];
+  const [scopeTarget, setScopeTarget] = useState(null);
+
+  const handleAccept = async (proposalId) => {
+    try {
+      await fetch(`http://localhost:3001/api/proposals/${proposalId}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ status: "Accepted" }),
+      });
+      alert("Proposal accepted!");
+      onClose();
+    } catch (err) { alert("Gagal update status"); }
+  };
+
+  const handleReject = async (proposalId) => {
+    try {
+      await fetch(`http://localhost:3001/api/proposals/${proposalId}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ status: "Rejected" }),
+      });
+      alert("Proposal rejected!");
+      onClose();
+    } catch (err) { alert("Gagal update status"); }
+  };
+
+  if (scopeTarget) {
+    return (
+      <ScopeChangeModal
+        proposal={scopeTarget}
+        project={project}
+        token={token}
+        onClose={() => setScopeTarget(null)}
+        onSuccess={(id) => { setScopeTarget(null); navigate(`/scope-change/${id}`); }}
+      />
+    );
+  }
+
+  return (
+    <div className="dash-modal-overlay" onClick={onClose}>
+      <div className="dash-modal" onClick={e => e.stopPropagation()}>
+        <div className="dash-modal-header">
+          <div>
+            <h2 className="dash-modal-title">Proposals for</h2>
+            <p className="dash-modal-subtitle">{project.title}</p>
+          </div>
+          <button className="dash-modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="dash-modal-body">
+          {proposals.length === 0 ? (
+            <p style={{ textAlign: "center", color: "#94a3b8", padding: "2rem" }}>No proposals yet.</p>
+          ) : (
+            proposals.map(p => {
+              const st = statusConfig[p.status] || { label: p.status, cls: "pending", icon: "⏳" };
+              const initials = p.freelancer_name ? p.freelancer_name.split(" ").map(n => n[0]).join("").toUpperCase() : "F";
+              const isActive = ["Accepted", "Delivered", "Completed"].includes(p.status);
+              return (
+                <div className="dash-modal-proposal" key={p.id}>
+                  <div className="dash-modal-proposal-header">
+                    <div className="dash-modal-avatar">{initials}</div>
+                    <div className="dash-modal-freelancer-info">
+                      <span className="dash-modal-freelancer-name">{p.freelancer_name}</span>
+                      <span className="dash-modal-date">{new Date(p.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <span className={`dash-status-badge dash-status-badge--${st.cls}`}>{st.icon} {st.label}</span>
+                  </div>
+                  <p className="dash-modal-content">{p.content?.slice(0, 200)}...</p>
+                  <div className="dash-modal-actions">
+                    <button className="dash-modal-negotiate-btn" onClick={() => navigate(`/projects/${project.id}/negotiate/${p.id}`)}>💬 Negotiate</button>
+                    {p.status === "Pending" && (
+                      <>
+                        <button className="dash-modal-accept-btn" onClick={() => handleAccept(p.id)}>✓ Accept</button>
+                        <button className="dash-modal-reject-btn" onClick={() => handleReject(p.id)}>✕ Reject</button>
+                      </>
+                    )}
+                    {isActive && (
+                      <>
+                        <button className="dash-modal-delivery-btn" onClick={() => navigate(`/delivery/${p.id}`)}>📦 View Delivery</button>
+                        {p.status !== "Completed" && (
+                          <button className="dash-modal-scope-btn" onClick={() => setScopeTarget(p)}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48 2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48 2.83-2.83"/></svg>
+                            Request Scope Change
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── EMPTY STATE ──────────────────────────────────────────────
+const EmptyState = ({ title, sub, btnLabel, onBtn }) => (
+  <div className="dash-empty">
+    <p className="dash-empty-title">{title}</p>
+    <p className="dash-empty-sub">{sub}</p>
+    <button className="dash-empty-btn" onClick={onBtn}>{btnLabel}</button>
+  </div>
+);
 
 // ─── MAIN DASHBOARD ───────────────────────────────────────────
 export default function Dashboard() {
@@ -504,10 +384,7 @@ export default function Dashboard() {
   const [clientProjects, setClientProjects] = useState([]);
   const [loadingProjects, setLoadingProjects] = useState(true);
   const [selectedProject, setSelectedProject] = useState(null);
-
-  // ── Scope Changes untuk Freelancer ──
   const [scopeChanges, setScopeChanges] = useState([]);
-  const [loadingScopeChanges, setLoadingScopeChanges] = useState(true);
 
   useEffect(() => {
     if (!token) { navigate("/login"); return; }
@@ -518,44 +395,26 @@ export default function Dashboard() {
 
   const fetchProposals = async () => {
     try {
-      const res = await fetch("http://localhost:3001/api/proposals/my", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch("http://localhost:3001/api/proposals/my", { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       setProposals(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error("Gagal fetch proposals:", err);
-    } finally {
-      setLoadingProposals(false);
-    }
+    } catch (err) { console.error(err); } finally { setLoadingProposals(false); }
   };
 
   const fetchClientProjects = async () => {
     try {
-      const res = await fetch("http://localhost:3001/api/proposals/client/my-projects", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch("http://localhost:3001/api/proposals/client/my-projects", { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       setClientProjects(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error("Gagal fetch client projects:", err);
-    } finally {
-      setLoadingProjects(false);
-    }
+    } catch (err) { console.error(err); } finally { setLoadingProjects(false); }
   };
 
   const fetchScopeChanges = async () => {
     try {
-      const res = await fetch("http://localhost:3001/api/scope-changes/my", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch("http://localhost:3001/api/scope-changes/my", { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       setScopeChanges(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error("Gagal fetch scope changes:", err);
-    } finally {
-      setLoadingScopeChanges(false);
-    }
+    } catch (err) { console.error(err); }
   };
 
   const handleLogout = () => {
@@ -578,21 +437,21 @@ export default function Dashboard() {
     active:    clientProjects.filter(p => (p.proposals || []).some(pr => ["Accepted", "Delivered"].includes(pr.status))).length,
   };
 
-  const pendingScopeChanges = scopeChanges.filter(sc => sc.status === "pending").length;
-
   const FREELANCER_TABS = [
-    { key: "all",     label: "All",      count: stats.total },
-    { key: "pending", label: "Pending",  count: stats.pending },
-    { key: "closed",  label: "Closed",   count: stats.accepted + stats.rejected },
+    { key: "all",     label: "All",     count: stats.total },
+    { key: "pending", label: "Pending", count: stats.pending },
+    { key: "closed",  label: "Closed",  count: stats.accepted + stats.rejected },
   ];
 
   const filteredProposals = proposals.filter(p => {
     if (activeTab === "all") return true;
+    if (activeTab === "pending") return p.status === "Pending";
     if (activeTab === "closed") return ["Accepted", "Rejected", "Delivered", "Completed"].includes(p.status);
-    return p.status.toLowerCase() === activeTab;
+    return true;
   });
 
   const initials = user?.name ? user.name.split(" ").map(n => n[0]).join("").toUpperCase() : "U";
+  const pendingScopeChanges = scopeChanges.filter(sc => sc.status === "pending").length;
 
   return (
     <div className="dash-page">
@@ -624,15 +483,13 @@ export default function Dashboard() {
 
         {/* ── ROLE TABS ── */}
         <div className="dash-role-tabs">
-          <button className={`dash-role-tab ${roleTab === "freelancer" ? "active" : ""}`} onClick={() => setRoleTab("freelancer")}>
+          <button className={`dash-role-tab ${roleTab === "freelancer" ? "active" : ""}`} onClick={() => { setRoleTab("freelancer"); setActiveTab("all"); }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             Freelancer
             <span className="dash-role-tab-count">{stats.total}</span>
-            {pendingScopeChanges > 0 && (
-              <span className="dash-role-tab-alert">{pendingScopeChanges}</span>
-            )}
+            {pendingScopeChanges > 0 && <span className="dash-role-tab-alert">{pendingScopeChanges}</span>}
           </button>
-          <button className={`dash-role-tab ${roleTab === "client" ? "active" : ""}`} onClick={() => setRoleTab("client")}>
+          <button className={`dash-role-tab ${roleTab === "client" ? "active" : ""}`} onClick={() => { setRoleTab("client"); }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
             Client
             <span className="dash-role-tab-count">{clientStats.total}</span>
@@ -652,36 +509,11 @@ export default function Dashboard() {
               <StatCard label="Pending" value={stats.pending} sub="Awaiting response" accent="orange"
                 icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
               />
-              <StatCard label="Scope Changes" value={pendingScopeChanges} sub="Pending requests" accent="blue"
-                icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48 2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48 2.83-2.83"/></svg>}
+              <StatCard label="Rejected" value={stats.rejected} sub="Not selected" accent="blue"
+                icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>}
               />
             </div>
 
-            {/* ── SCOPE CHANGE REQUESTS ── */}
-            {scopeChanges.length > 0 && (
-              <div className="dash-proposals-section">
-                <div className="dash-section-header">
-                  <div>
-                    <h2 className="dash-section-title">
-                      Scope Change Requests
-                      {pendingScopeChanges > 0 && <span className="dash-scope-alert-badge">{pendingScopeChanges} new</span>}
-                    </h2>
-                    <p className="dash-section-sub">Clients are requesting additional work on your active projects.</p>
-                  </div>
-                </div>
-                <div className="dash-scope-cards-list">
-                  {loadingScopeChanges ? (
-                    <p style={{ textAlign: "center", padding: "1rem", color: "#888" }}>Loading...</p>
-                  ) : (
-                    scopeChanges.map(sc => (
-                      <ScopeChangeCard key={sc.id} sc={sc} token={token} onRespond={() => { fetchScopeChanges(); fetchClientProjects(); }} />
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* ── MY PROPOSALS ── */}
             <div className="dash-proposals-section">
               <div className="dash-section-header">
                 <div>
@@ -693,6 +525,8 @@ export default function Dashboard() {
                   New Proposal
                 </button>
               </div>
+
+              {/* Tab filter */}
               <div className="dash-tabs">
                 {FREELANCER_TABS.map(tab => (
                   <button key={tab.key} className={`dash-tab ${activeTab === tab.key ? "dash-tab--active" : ""}`} onClick={() => setActiveTab(tab.key)}>
@@ -701,13 +535,16 @@ export default function Dashboard() {
                   </button>
                 ))}
               </div>
+
               <div className="dash-cards-list">
                 {loadingProposals ? (
                   <p style={{ textAlign: "center", padding: "2rem", color: "#888" }}>Loading...</p>
                 ) : filteredProposals.length === 0 ? (
-                  <EmptyState title="No proposals yet" sub="Browse open projects and send your first proposal." btnLabel="Browse Projects" onBtn={() => navigate("/projects")} />
+                  <EmptyState title="No proposals found" sub="Browse open projects and send your first proposal." btnLabel="Browse Projects" onBtn={() => navigate("/projects")} />
                 ) : (
-                  filteredProposals.map(p => <ProposalCard key={p.id} proposal={p} />)
+                  filteredProposals.map(p => (
+                    <ProposalCard key={p.id} proposal={p} scopeChanges={scopeChanges} />
+                  ))
                 )}
               </div>
             </div>
@@ -747,7 +584,7 @@ export default function Dashboard() {
                 {loadingProjects ? (
                   <p style={{ textAlign: "center", padding: "2rem", color: "#888" }}>Loading...</p>
                 ) : clientProjects.length === 0 ? (
-                  <EmptyState title="No projects posted yet" sub="Post your first project and start receiving proposals." btnLabel="Post a Project" onBtn={() => navigate("/post-project")} />
+                  <EmptyState title="No projects posted yet" sub="Post your first project and start receiving proposals from freelancers." btnLabel="Post a Project" onBtn={() => navigate("/post-project")} />
                 ) : (
                   <div className="dash-client-grid">
                     {clientProjects.map(p => (

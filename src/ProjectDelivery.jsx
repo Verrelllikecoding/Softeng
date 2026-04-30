@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "./ProjectDelivery.css";
 import NotificationBell from "./NotificationBell";
@@ -31,11 +31,100 @@ const Navbar = () => {
   );
 };
 
+// ─── STAR RATING COMPONENT ────────────────────────────────────
+const StarRating = ({ value, onChange, size = 28 }) => (
+  <div style={{ display: "flex", gap: "6px" }}>
+    {[1, 2, 3, 4, 5].map(star => (
+      <span
+        key={star}
+        onClick={() => onChange(star)}
+        style={{
+          fontSize: `${size}px`,
+          cursor: "pointer",
+          color: star <= value ? "#f59e0b" : "#d1d5db",
+          transition: "color 0.15s",
+        }}
+      >★</span>
+    ))}
+  </div>
+);
+
+// ─── RATING MODAL ─────────────────────────────────────────────
+const RatingModal = ({ proposalId, ratedId, ratedName, role, token, onClose, onDone }) => {
+  const [score, setScore] = useState(0);
+  const [review, setReview] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const labels = ["", "Poor", "Fair", "Good", "Very Good", "Excellent"];
+
+  const handleSubmit = async () => {
+    if (score === 0) { alert("Please select a star rating!"); return; }
+    setSubmitting(true);
+    try {
+      const res = await fetch("http://localhost:3001/api/ratings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ proposal_id: proposalId, rated_id: ratedId, role, score, review }),
+      });
+      const data = await res.json();
+      if (data.rating) {
+        onDone();
+      } else {
+        alert(data.message || "Gagal submit rating");
+      }
+    } catch (err) {
+      alert("Tidak bisa terhubung ke server");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="rating-overlay">
+      <div className="rating-modal">
+        <div className="rating-modal-header">
+          <div className="rating-modal-icon">⭐</div>
+          <h2>Rate Your Experience</h2>
+          <p>How was your experience working with <strong>{ratedName}</strong>?</p>
+        </div>
+
+        <div className="rating-modal-body">
+          <div className="rating-stars-wrap">
+            <StarRating value={score} onChange={setScore} size={36} />
+            {score > 0 && (
+              <span className="rating-label">{labels[score]}</span>
+            )}
+          </div>
+
+          <div className="rating-field">
+            <label>Write a Review <span style={{ color: "#94a3b8", fontWeight: 400 }}>optional</span></label>
+            <textarea
+              rows={4}
+              placeholder={`Share your experience working with ${ratedName}...`}
+              value={review}
+              onChange={e => setReview(e.target.value)}
+            />
+          </div>
+
+          <div className="rating-actions">
+            <button className="rating-skip-btn" onClick={onClose}>Skip for now</button>
+            <button className="rating-submit-btn" onClick={handleSubmit} disabled={submitting || score === 0}>
+              {submitting ? "Submitting..." : "Submit Rating →"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function ProjectDelivery() {
   const navigate = useNavigate();
   const { proposal_id } = useParams();
 
   const [project, setProject] = useState(null);
+  const [freelancerId, setFreelancerId] = useState(null);
+  const [freelancerName, setFreelancerName] = useState("");
   const [deliveries, setDeliveries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isClient, setIsClient] = useState(false);
@@ -47,6 +136,11 @@ export default function ProjectDelivery() {
   const [confirming, setConfirming] = useState(null);
   const [rejecting, setRejecting] = useState(null);
   const [successMsg, setSuccessMsg] = useState("");
+
+  // Rating state
+  const [showRating, setShowRating] = useState(false);
+  const [ratingTarget, setRatingTarget] = useState(null);
+  const [alreadyRated, setAlreadyRated] = useState(false);
 
   const user = JSON.parse(localStorage.getItem("user"));
   const token = localStorage.getItem("token");
@@ -61,8 +155,9 @@ export default function ProjectDelivery() {
     try {
       let foundProject = null;
       let detectedIsClient = false;
+      let detectedFreelancerId = null;
+      let detectedFreelancerName = "";
 
-      // ── Coba fetch sebagai freelancer dulu ──
       const propRes = await fetch(`http://localhost:3001/api/proposals/my`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -72,12 +167,11 @@ export default function ProjectDelivery() {
         : null;
 
       if (myProposal) {
-        // User adalah freelancer dari proposal ini
         const projRes = await fetch(`http://localhost:3001/api/projects/${myProposal.project_id}`);
         foundProject = await projRes.json();
         detectedIsClient = false;
+        detectedFreelancerId = user?.id;
       } else {
-        // ── Coba fetch sebagai client ──
         const clientRes = await fetch(`http://localhost:3001/api/proposals/client/my-projects`, {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -88,10 +182,11 @@ export default function ProjectDelivery() {
             p => p.id === parseInt(proposal_id)
           );
           if (matchProposal) {
-            // Fetch full project detail
             const projRes = await fetch(`http://localhost:3001/api/projects/${proj.id}`);
             foundProject = await projRes.json();
             detectedIsClient = true;
+            detectedFreelancerId = matchProposal.freelancer_id;
+            detectedFreelancerName = matchProposal.freelancer_name;
             break;
           }
         }
@@ -100,14 +195,24 @@ export default function ProjectDelivery() {
       if (foundProject) {
         setProject(foundProject);
         setIsClient(detectedIsClient);
+        setFreelancerId(detectedFreelancerId);
+        setFreelancerName(detectedFreelancerName);
       }
 
-      // ── Fetch deliveries ──
       const delRes = await fetch(`http://localhost:3001/api/deliveries/proposal/${proposal_id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const delData = await delRes.json();
       setDeliveries(Array.isArray(delData) ? delData : []);
+
+      // Check if already rated
+      const ratingRes = await fetch(`http://localhost:3001/api/ratings/proposal/${proposal_id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const ratingData = await ratingRes.json();
+      if (Array.isArray(ratingData) && ratingData.some(r => r.rater_id === user?.id)) {
+        setAlreadyRated(true);
+      }
 
     } catch (err) {
       console.error("Gagal fetch data:", err);
@@ -168,6 +273,15 @@ export default function ProjectDelivery() {
       if (data.delivery) {
         setSuccessMsg("✓ Payment confirmed! Project selesai 🎉");
         fetchData();
+        // Tampilkan rating modal setelah payment confirmed
+        if (!alreadyRated) {
+          setRatingTarget({
+            ratedId: freelancerId,
+            ratedName: freelancerName,
+            role: "client_to_freelancer",
+          });
+          setShowRating(true);
+        }
       } else {
         alert(data.message || "Gagal confirm payment");
       }
@@ -185,10 +299,7 @@ export default function ProjectDelivery() {
     try {
       const res = await fetch(`http://localhost:3001/api/deliveries/${deliveryId}/reject`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ reason }),
       });
       const data = await res.json();
@@ -231,9 +342,25 @@ export default function ProjectDelivery() {
     <div className="del-page">
       <Navbar />
 
+      {/* ── RATING MODAL ── */}
+      {showRating && ratingTarget && (
+        <RatingModal
+          proposalId={proposal_id}
+          ratedId={ratingTarget.ratedId}
+          ratedName={ratingTarget.ratedName}
+          role={ratingTarget.role}
+          token={token}
+          onClose={() => setShowRating(false)}
+          onDone={() => {
+            setShowRating(false);
+            setAlreadyRated(true);
+            setSuccessMsg("✓ Rating submitted! Thank you for your feedback.");
+          }}
+        />
+      )}
+
       <div className="del-body">
 
-        {/* ── HEADER ── */}
         <div className="del-header">
           <button className="del-back-btn" onClick={() => navigate("/dashboard")}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
@@ -257,7 +384,6 @@ export default function ProjectDelivery() {
 
         <div className="del-layout">
 
-          {/* ── MAIN ── */}
           <div className="del-main">
 
             {successMsg && (
@@ -272,14 +398,40 @@ export default function ProjectDelivery() {
                 <div className="del-completed-icon">
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                 </div>
-                <div>
+                <div style={{ flex: 1 }}>
                   <h3>Project Completed! 🎉</h3>
                   <p>Payment has been confirmed and the project is now closed.</p>
                 </div>
+                {isClient && !alreadyRated && (
+                  <button
+                    className="del-rate-btn"
+                    onClick={() => {
+                      setRatingTarget({ ratedId: freelancerId, ratedName: freelancerName, role: "client_to_freelancer" });
+                      setShowRating(true);
+                    }}
+                  >
+                    ⭐ Rate Freelancer
+                  </button>
+                )}
+                {!isClient && !alreadyRated && (
+                  <button
+                    className="del-rate-btn"
+                    onClick={() => {
+                      setRatingTarget({ ratedId: project.client_id, ratedName: project.client_name, role: "freelancer_to_client" });
+                      setShowRating(true);
+                    }}
+                  >
+                    ⭐ Rate Client
+                  </button>
+                )}
+                {alreadyRated && (
+                  <span style={{ fontSize: "12px", color: "#15803d", background: "#f0fdf4", padding: "6px 12px", borderRadius: "20px", border: "1px solid #86efac" }}>
+                    ✓ Rated
+                  </span>
+                )}
               </div>
             )}
 
-            {/* ── DELIVERY HISTORY ── */}
             <div className="del-section">
               <h2 className="del-section-title">Delivery History</h2>
 
@@ -322,7 +474,6 @@ export default function ProjectDelivery() {
                           </a>
                         )}
 
-                        {/* ── CLIENT: Confirm atau Reject ── */}
                         {isClient && d.status === "submitted" && !isPaid && !isRejected && (
                           <div className="del-confirm-row">
                             <p className="del-confirm-hint">
@@ -339,7 +490,6 @@ export default function ProjectDelivery() {
                           </div>
                         )}
 
-                        {/* ── FREELANCER: Status review ── */}
                         {!isClient && d.status === "submitted" && !isPaid && (
                           <div className="del-review-status">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
@@ -360,7 +510,6 @@ export default function ProjectDelivery() {
               )}
             </div>
 
-            {/* ── SUBMIT DELIVERY (Freelancer only) ── */}
             {!isClient && !isCompleted && (
               <div className="del-section">
                 <h2 className="del-section-title">
@@ -407,7 +556,6 @@ export default function ProjectDelivery() {
 
           </div>
 
-          {/* ── SIDEBAR ── */}
           <aside className="del-sidebar">
             <div className="del-sidebar-card">
               <div className="del-sidebar-title">Project Details</div>
@@ -438,9 +586,13 @@ export default function ProjectDelivery() {
                   <div className="del-prog-dot" />
                   <div><p>Payment Confirmed</p><span>{isCompleted ? "✓ Paid" : "Pending"}</span></div>
                 </div>
-                <div className={`del-prog-step ${isCompleted ? "active" : "inactive"}`}>
+                <div className={`del-prog-step ${isCompleted ? "done" : "inactive"}`}>
                   <div className="del-prog-dot" />
-                  <div><p>Project Closed</p><span>{isCompleted ? "✓ Closed" : "Pending"}</span></div>
+                  <div><p>Rating</p><span>{alreadyRated ? "✓ Done" : isCompleted ? "Pending" : "Pending"}</span></div>
+                </div>
+                <div className={`del-prog-step ${isCompleted && alreadyRated ? "active" : "inactive"}`}>
+                  <div className="del-prog-dot" />
+                  <div><p>Project Closed</p><span>{isCompleted && alreadyRated ? "✓ Closed" : "Pending"}</span></div>
                 </div>
               </div>
             </div>
