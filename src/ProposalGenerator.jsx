@@ -122,76 +122,57 @@ export default function ProposalGenerator() {
         : project.sub_category || ""
     : "";
 
+  // ────────────────────────────────────────────────────────
+  // ✅ FIXED: Generate proposal lewat backend (API key aman)
+  // Sebelumnya: fetch langsung ke Groq dari frontend (TIDAK AMAN)
+  // Sekarang:   fetch ke /api/proposals/generate di backend kita
+  // ────────────────────────────────────────────────────────
   const generateProposal = async () => {
     setGenerating(true);
     setProposal(null);
 
-    const prompt = `You are an expert freelance proposal writer. Write a compelling, professional freelance proposal for the following project and freelancer details.
-
-PROJECT DETAILS:
-- Title: ${project.title}
-- Category: ${project.sub_category}
-- Required Skills: ${projectSkills}
-- Client Budget: ${project.budget}
-- Deadline: ${project.deadline}
-- Client Name: ${project.client_name}
-- Description: ${project.description}
-
-FREELANCER DETAILS:
-- Name: ${form.freelancerName || "the freelancer"}
-- Years of Experience: ${form.experience}
-- Relevant Skills: ${form.skills || projectSkills}
-- Portfolio/Past Work: ${form.portfolio || "not specified"}
-- Bid Amount: $${form.bidAmount}
-- Proposed Delivery: ${form.deliveryDays} days
-- Tone: ${form.tone}
-- Key Highlights/USPs: ${form.highlights || "professional quality, on-time delivery, clear communication"}
-${form.revisionNote ? `- Additional Instructions: ${form.revisionNote}` : ""}
-
-Write a full proposal with these sections:
-1. A warm, personalized opening that addresses the client by name
-2. Why I'm the right fit (2–3 sentences connecting experience to this specific project)
-3. My Approach (brief methodology for this project specifically)
-4. Timeline & Deliverables (reference the ${form.deliveryDays}-day timeline)
-5. Investment (present the $${form.bidAmount} bid confidently)
-6. A strong, action-oriented closing
-
-Format with clear section headers using **Header Name** markdown. Keep it concise (300–400 words total), persuasive, and tailored. Tone: ${form.tone}.`;
-
-    const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
     try {
-      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      const response = await fetch("http://localhost:3001/api/proposals/generate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${GROQ_API_KEY}`,
+          // JWT token user — bukan Groq API key
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
-          max_tokens: 1000,
-          temperature: 0.7,
-          messages: [
-            {
-              role: "system",
-              content: "You are an expert freelance proposal writer. Write compelling, professional proposals that win clients. Always use **Header** markdown for section headers.",
-            },
-            { role: "user", content: prompt },
-          ],
+          // Data project
+          projectTitle:  project.title,
+          subCategory:   project.sub_category,
+          projectSkills: projectSkills,
+          budget:        project.budget,
+          deadline:      project.deadline,
+          clientName:    project.client_name,
+          description:   project.description,
+          // Data form freelancer
+          freelancerName: form.freelancerName,
+          experience:     form.experience,
+          skills:         form.skills,
+          portfolio:      form.portfolio,
+          bidAmount:      form.bidAmount,
+          deliveryDays:   form.deliveryDays,
+          tone:           form.tone,
+          highlights:     form.highlights,
+          revisionNote:   form.revisionNote,
         }),
       });
 
       if (!response.ok) {
         const err = await response.json();
-        throw new Error(err.error?.message || "Groq API error");
+        throw new Error(err.message || "Gagal generate proposal");
       }
 
       const data = await response.json();
-      const text = data.choices?.[0]?.message?.content || "";
-      setProposal(text);
+      setProposal(data.result);
       setStep(3);
+
     } catch (err) {
-      console.error("Groq error:", err);
-      setProposal(`❌ Failed to generate: ${err.message}\n\nPastikan VITE_GROQ_API_KEY sudah diisi di file .env`);
+      console.error("Generate error:", err);
+      setProposal(`❌ Gagal generate proposal: ${err.message}\n\nPastikan backend berjalan dan GROQ_API_KEY sudah diisi di file .env backend.`);
       setStep(3);
     } finally {
       setGenerating(false);
@@ -221,7 +202,7 @@ Format with clear section headers using **Header Name** markdown. Keep it concis
     });
   };
 
-  // ── Send proposal ke backend ──
+  // Send proposal ke backend
   const handleSend = async () => {
     if (!token) { navigate("/login"); return; }
     setSending(true);
@@ -241,7 +222,6 @@ Format with clear section headers using **Header Name** markdown. Keep it concis
       const data = await res.json();
 
       if (data.proposal) {
-        // Simpan ke sessionStorage untuk ProposalNegotiation
         sessionStorage.setItem("activeProposal", JSON.stringify({
           proposalText: proposal,
           bid: parseInt(form.bidAmount),
@@ -250,7 +230,6 @@ Format with clear section headers using **Header Name** markdown. Keep it concis
           projectId: id,
         }));
         setSendStatus("sent");
-        // Seharusnya seperti ini (include proposal.id dari response API):
         setTimeout(() => navigate(`/projects/${id}/negotiate/${data.proposal.id}`), 1500);
       } else {
         alert(data.message || "Gagal mengirim proposal");
