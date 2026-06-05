@@ -168,7 +168,7 @@ const goToLogin = () => {
               Secure Connection
             </div>
             <div className="app-title">
-              Scope<span className="accent">Sync</span>
+              Proposal<span className="accent">in</span>
             </div>
           </div>
         </div>

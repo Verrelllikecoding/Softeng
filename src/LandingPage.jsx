@@ -23,7 +23,7 @@ const Navbar = () => {
     <nav className={`navbar ${scrolled ? "scrolled" : ""}`}>
       <div className="nav-inner">
         <div className="nav-logo" onClick={() => scrollTo("hero")}>
-          Scope<span className="nav-accent">Sync</span>
+          Proposal<span className="nav-accent">in</span>
         </div>
         <div className="nav-links">
 
@@ -402,7 +402,7 @@ const Features = () => {
         <div className={`section-header ${visible ? "visible" : ""}`}>
           <div className="section-badge">Features</div>
           <h2 className="section-title">Everything You Need<br />to Win Projects</h2>
-          <p className="section-sub">From browsing projects to closing deals — everything is in ScopeSync.</p>
+          <p className="section-sub">From browsing projects to closing deals — everything is in Proposalin.</p>
         </div>
         <div className={`features-grid ${visible ? "visible" : ""}`}>
           {/* Row 1: big card left + 2 small stacked right */}
@@ -451,7 +451,7 @@ const Features = () => {
           <div className="feature-card feature-card--large" style={{ animationDelay: '0.5s' }}>
             <div className="fc-icon-wrap fc-sky"><span>📄</span></div>
             <h3 className="fc-title">Auto Contracts on Deal Close</h3>
-            <p className="fc-desc">The moment both sides agree, ScopeSync auto-generates a professional, legally-sound work contract — ready for digital signature in one click.</p>
+            <p className="fc-desc">The moment both sides agree, <Proposalin></Proposalin> auto-generates a professional, legally-sound work contract — ready for digital signature in one click.</p>
             <div className="fc-illustration fc-illus-contract">
               <div className="fc-contract-mock">
                 <div className="fc-contract-line fc-contract-title-line" />
@@ -561,14 +561,14 @@ const Pricing = () => {
 
 // ─── TESTIMONIALS (MARQUEE) ───────────────────────────────────
 const testimonials = [
-  { text: "ScopeSync completely changed how I land clients. My acceptance rate went from 30% to over 80% in just 2 months.", name: "Rizky Pratama", role: "Fullstack Developer", avatar: "RP", color: "#dbeafe" },
+  { text: "Proposalin completely changed how I land clients. My acceptance rate went from 30% to over 80% in just 2 months.", name: "Rizky Pratama", role: "Fullstack Developer", avatar: "RP", color: "#dbeafe" },
   { text: "The AI proposal generator is insane. It writes better than I do and sounds exactly like me. My clients love it.", name: "Sari Dewi", role: "UI/UX Designer", avatar: "SD", color: "#ede9fe" },
   { text: "I used to spend hours on proposals. Now it takes 5 minutes. The negotiation chat is a game changer too.", name: "Ahmad Fauzi", role: "Digital Marketer", avatar: "AF", color: "#d1fae5" },
   { text: "Best investment for my freelance business. Got 3 clients in the first week after switching from my old workflow.", name: "Maya Indah", role: "Content Strategist", avatar: "MI", color: "#fce7f3" },
   { text: "The auto-contract feature alone is worth the subscription. No more back-and-forth on terms over email.", name: "Dimas Saputra", role: "Mobile Developer", avatar: "DS", color: "#fef3c7" },
   { text: "I was skeptical about AI proposals but the quality blew me away. It nailed my tone perfectly on the first try.", name: "Nadia Putri", role: "Graphic Designer", avatar: "NP", color: "#e0f2fe" },
   { text: "As an agency, having 10 team members on one plan is perfect. The analytics dashboard helps me track everything.", name: "Hendra Wijaya", role: "Agency Owner", avatar: "HW", color: "#fce7f3" },
-  { text: "ScopeSync gave me the confidence to pitch bigger clients. The professional proposals make me look like a top-tier freelancer.", name: "Fitri Handayani", role: "SEO Specialist", avatar: "FH", color: "#d1fae5" },
+  { text: "Proposalin gave me the confidence to pitch bigger clients. The professional proposals make me look like a top-tier freelancer.", name: "Fitri Handayani", role: "SEO Specialist", avatar: "FH", color: "#d1fae5" },
 ];
 
 const TestiCard = ({ t }) => (
@@ -634,7 +634,7 @@ const Footer = () => {
     <footer className="footer">
       <div className="footer-inner">
         <div className="footer-brand">
-          <div className="footer-logo">Scope<span className="nav-accent">Sync</span></div>
+          <div className="footer-logo">Proposal<span className="nav-accent">in</span></div>
           <p className="footer-tagline">Indonesia's best freelancer proposal platform. From project to deal, faster.</p>
         </div>
         <div className="footer-cols">
@@ -657,7 +657,7 @@ const Footer = () => {
         </div>
       </div>
       <div className="footer-bottom">
-        <span>© 2025 ScopeSync. All rights reserved.</span>
+        <span>© 2025 Proposalin. All rights reserved.</span>
         <div className="footer-bottom-links">
           <span onClick={() => navigate("/login")}>Log In</span>
           <span onClick={() => navigate("/signup")}>Sign Up Free</span>
